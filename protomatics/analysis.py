@@ -62,3 +62,29 @@ def make_peak_vel_map(
         )
 
     return peak_map
+
+
+def calc_azimuthal_average(
+    data: np.ndarray,
+    r_grid: np.ndarray,
+) -> tuple(dict, np.ndarray):
+    """Calculates the azimuthal average of data"""
+
+    # make radii integers in order to offer some finite resolution
+    r_grid = r_grid.copy().astype(np.int)
+
+    # Extract unique radii and skip as needed
+    rs = np.unique(r_grid)
+
+    az_averages = {}
+    # mask the moment where everything isn't at a given radius and take the mean
+    for r in rs:
+        mask = r_grid == r
+        az_averages[r] = np.mean(data[mask]) if np.any(mask) else 0
+
+    # Map the averages to the original shape
+    az_avg_map = np.zeros_like(data)
+    for r, avg in az_averages.items():
+        az_avg_map[r_grid == r] = avg
+
+    return az_averages, az_avg_map
