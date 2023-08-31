@@ -46,7 +46,7 @@ repos:
           - --fix
           - --target-version=py310
           - --line-length=98
-          - --ignore=E501,S101,E402,C901,TRY003,BLE001
+          - --ignore=E501,S101,E402,C901,TRY003,BLE001,F403
           - --select=B,BLE,C4,DTZ,E,C,F,FLY,G,I,PD,PIE,PLW,RET,RUF,S,SIM,TID,TRY,W
   - repo: https://github.com/asottile/blacken-docs
     rev: 1.15.0
