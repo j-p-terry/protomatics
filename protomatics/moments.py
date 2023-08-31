@@ -220,7 +220,6 @@ def extract_wiggle(
     moment1: np.ndarray,
     in_pv_space: bool = False,
     rotation_angle: float = 0.0,
-    distance: float = 200.0,
     vmin: float | None = None,
     vmax: float | None = None,
     rmin: float | None = None,
