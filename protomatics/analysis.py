@@ -14,7 +14,7 @@ def make_peak_vel_map(
     plot: bool = False,
     save: bool = False,
     save_name: str = "",
-):
+) -> np.ndarray:
     """Makes a map of the peak velocity at each pixel"""
 
     data, velax = bm.load_cube(fits_path)
