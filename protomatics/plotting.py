@@ -101,6 +101,8 @@ def plot_wcs_data(
     overlay_pmin: Union[float, None] = None,
     overlay_channels: Union[list, None] = None,
     subtract_data: Union[np.ndarray, None] = None,
+    subtract_channels: Union[list, None] = None,
+    subtract_overlay_channels: Union[list, None] = None,
     num_ticks: int = 5,
     log: bool = False,
     scale_data: float = 1.0,
@@ -155,6 +157,7 @@ def plot_wcs_data(
             scale_data=scale_data,
             line_index=line_index,
             channel=channel,
+            subtract_channels=subtract_channels,
         )
 
         if subtract_data is not None:
@@ -205,6 +208,7 @@ def plot_wcs_data(
                 scale_data=overlay_data_scale,
                 line_index=line_index,
                 channel=overlay_channel,
+                subtract_channels=subtract_overlay_channels,
             )
             # cut some values
             if overlay_pmin is not None:
