@@ -1,9 +1,10 @@
 import bettermoments as bm
 import numpy as np
+import scipy
 from astopy.io import fits
 
 from .constants import G, Msol_kg, au, au_pc
-from .plotting import plot_wcs_data
+from .plotting import get_wiggle_from_contour, plot_polar_and_get_contour, plot_wcs_data
 
 ##############################################################
 ##############################################################
@@ -179,3 +180,67 @@ def plot_moments(
             vmax=vel_max,
             plot_cmap="RdBu_r",
         )
+
+
+def get_pv_curve(
+    moment: np.ndarray,
+):
+    """Gets the postion-velocity curve down the middle of a moment-1 map"""
+
+    middlex = moment.shape[1] // 2
+    pv_wiggle = moment[:, middlex]
+
+    rs = np.array([i - moment.shape[0] // 2 for i in range(len(pv_wiggle))])
+
+    return rs, pv_wiggle
+
+
+def split_pv_curve(
+    rs: np.ndarray,
+    pv_wiggle: np.ndarray,
+    pv_rmin: float = 0.0,
+):
+    """Splits the positon-velocity curve into the positive and negative curves"""
+
+    pos_okay = np.where(rs > pv_rmin)
+    neg_okay = np.where(-rs > pv_rmin)
+    okay = np.where(np.abs(rs) > pv_rmin)
+    pos_pv_wiggle = pv_wiggle[pos_okay]
+    neg_pv_wiggle = pv_wiggle[neg_okay]
+    pos_rs = rs[pos_okay]
+    neg_rs = rs[neg_okay]
+
+    okay_rs = rs[okay]
+    okay_wiggle = pv_wiggle[okay]
+
+    return okay_rs, okay_wiggle, pos_rs, pos_pv_wiggle, neg_rs, neg_pv_wiggle
+
+
+def extract_wiggle(
+    moment1: np.ndarray,
+    in_pv_space: bool = False,
+    rotation_angle: float = 0.0,
+    distance: float = 200.0,
+    vmin: float | None = None,
+    vmax: float | None = None,
+    rmin: float | None = None,
+    rmax: float | None = None,
+):
+    """
+    Extracts the v = 0 curve from a moment-1 map.
+    This is done either in position-position space or position-velocity space.
+    position-position curves are taken from extracting polar contours of v = 0
+    position-velocity curves are taken by a slice down the middle of the moment-1 map (with an appropriate rotation in degrees)
+    """
+
+    if in_pv_space:
+        if rotation_angle != 0:
+            moment1 = scipy.ndimage.rotate(moment1.copy(), rotation_angle)
+
+        return get_pv_curve(moment1)
+
+    contour = plot_polar_and_get_contour(
+        moment1, vmin=vmin, vmax=vmax, rmax=rmax, show=False, units=r"km s$^{-1}$"
+    )
+
+    return get_wiggle_from_contour(contour, rmin=rmin, rmax=rmax)

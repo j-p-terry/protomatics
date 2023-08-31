@@ -109,6 +109,7 @@ def plot_wcs_data(
     overlay_beam_color: str = "limegreen",
     plot_beam: bool = False,
     plot_overlay_beam: bool = False,
+    show: bool = True,
 ):
     """
     This plots a fits file in WCS with the option of overlaying another fits file as contours
@@ -262,7 +263,10 @@ def plot_wcs_data(
 
     if save:
         plt.savefig(save_name)
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
 
 def plot_polar_and_get_contour(
@@ -272,8 +276,9 @@ def plot_polar_and_get_contour(
     middley: int | None = None,
     vmin: float | None = None,
     vmax: float | None = None,
-    rmax: float = 200.0,
+    rmax: float | None = None,
     units: str = "",
+    show: bool = True,
 ):
     """Makes a polar plot and extracts the contour with a given contour_value"""
 
@@ -308,11 +313,17 @@ def plot_polar_and_get_contour(
     cbar.ax.tick_params(labelsize=ticks)
     cbar.ax.get_yaxis().labelpad = 40
 
-    ax.set_rlabel_position(300)
+    if rmax is None:
+        ax.set_rlabel_position(300)
 
-    ax.set_rlim(0, rmax)
+    else:
+        ax.set_rlabel_position(0.95 * rmax)
+        ax.set_rlim(0, rmax)
 
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
     return contour
 
