@@ -1,3 +1,4 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
@@ -262,4 +263,121 @@ def plot_wcs_data(
 
     if save:
         plt.savefig(save_name)
+    plt.show()
+
+
+def plot_polar_and_get_contour(
+    data: np.ndarray,
+    contour_value: float = 0.0,
+    middlex: int | None = None,
+    middley: int | None = None,
+    vmin: float | None = None,
+    vmax: float | None = None,
+    rmax: float = 200.0,
+    units: str = "",
+):
+    """Makes a polar plot and extracts the contour with a given contour_value"""
+
+    middlex = middlex if middlex is not None else data.shape[1] // 2
+    middley = middley if middley is not None else data.shape[0] // 2
+
+    # make range x range
+    xs = np.linspace(-middlex, middlex, data.shape[1])
+    ys = np.linspace(-middley, middley, data.shape[0])
+
+    # turn into x and y grids
+    gx = np.tile(xs, (data.shape[0], 1))
+    gy = np.tile(ys, (data.shape[1], 1)).T
+
+    rs = np.sqrt(gx**2 + gy**2)
+    phis = np.arctan2(gx, gy)
+
+    mplrc("xtick", labelsize=ticks)
+    mplrc("ytick", labelsize=ticks)
+
+    fig, ax = plt.subplots(figsize=(14.0, 10.5), subplot_kw={"projection": "polar"})
+    plt.grid(False)
+    im = ax.pcolormesh(phis, rs, data, cmap="RdBu_r")
+    contour = ax.contour(phis, rs, data, levels=[contour_value], colors="k")
+
+    ax.tick_params(pad=20)
+
+    im.set_clim(vmin, vmax)
+
+    cbar = fig.colorbar(im, fraction=0.045, pad=0.025, extend="both")
+    cbar.ax.set_ylabel(units, rotation=270, fontsize=titles, labelpad=0.05)
+    cbar.ax.tick_params(labelsize=ticks)
+    cbar.ax.get_yaxis().labelpad = 40
+
+    ax.set_rlabel_position(300)
+
+    ax.set_rlim(0, rmax)
+
+    plt.show()
+
+    return contour
+
+
+def get_wiggle_from_contour(
+    contour: matplotlib.contour.QuadContourSet,
+    rmin: float | None = None,
+    rmax: float | None = None,
+):
+    """Goes through a polar contour (extracted with pyplot) and finds the curve with the most entries"""
+
+    # iterates through each contour and finds the longest one
+    max_len = 0
+    for index in contour.collections[0].get_paths():
+        if len(index) > max_len:
+            max_path = index
+            max_len = len(index)
+
+    # get the vertices of that contour
+    v = max_path.vertices.copy()
+    phis = np.array(v[:, 0])
+    rs = np.array(v[:, 1])
+
+    # trim to fit radial range
+    rmin = rmin if rmin is not None else np.min(rs)
+    rmax = rmax if rmax is not None else np.max(rs)
+
+    good = np.where((rs >= rmin) & (rs <= rmax))
+    rs = rs[good]
+    phis = phis[good]
+
+    return rs, phis
+
+
+def polar_plot(rs: np.ndarray, phis: np.ndarray, rmax: float | None = None, scatter: bool = True):
+    """Makes a polar scatter/line plot"""
+
+    mplrc("xtick", labelsize=ticks)
+    mplrc("ytick", labelsize=ticks)
+
+    fig, ax = plt.subplots(figsize=(12, 12), subplot_kw={"projection": "polar"})
+
+    if scatter:
+        plt.scatter(
+            phis,
+            rs,
+            # lw=lw,
+            # ls=linestyles[i],
+            # s=ps/50,
+            color=colors[0],
+            marker=markers[0],
+            alpha=0.75,
+        )
+    else:
+        negative = np.where(phis < 0)
+        positive = np.where(phis > 0)
+        plt.plot(phis[negative], rs[negative], lw=lw / 2, c=colors[0], ls=linestyles[0])
+        plt.plot(phis[positive], rs[positive], lw=lw / 2, c=colors[0], ls=linestyles[0])
+
+    if rmax is None:
+        ax.set_rlabel_position(300)
+
+    else:
+        ax.set_rlabel_position(0.95 * rmax)
+        ax.set_rlim(0, rmax)
+
     plt.show()
