@@ -35,7 +35,7 @@ repos:
     hooks:
       - id: pyupgrade
         args:
-          - --py310-plus
+          - --py39-plus
           - --keep-runtime-typing
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
@@ -44,7 +44,7 @@ repos:
       - id: ruff
         args:
           - --fix
-          - --target-version=py310
+          - --target-version=py39
           - --line-length=98
           - --ignore=E501,S101,E402,C901,TRY003,BLE001,F403
           - --select=B,BLE,C4,DTZ,E,C,F,FLY,G,I,PD,PIE,PLW,RET,RUF,S,SIM,TID,TRY,W
