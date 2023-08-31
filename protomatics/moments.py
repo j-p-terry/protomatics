@@ -1,0 +1,181 @@
+import bettermoments as bm
+import numpy as np
+from astopy.io import fits
+
+from .constants import G, Msol_kg, au, au_pc
+from .plotting import plot_wcs_data
+
+##############################################################
+##############################################################
+##                                                          ##
+##          This program contains the necessary functions   ##
+##          to calculate and plot moments                   ##
+##          and extract channel curves                      ##
+##                                                          ##
+##############################################################
+##############################################################
+
+# bettermoments functions corresponding to their order
+moment_functions = {
+    0: bm.collapse_zeroth,
+    1: bm.collapse_first,
+    2: bm.collapse_second,
+    8: bm.collapse_eighth,
+    9: bm.collapse_ninth,
+}
+
+
+def get_image_physical_size(
+    hdu: list,
+    distance: float = 200.0,
+):
+    """Takes an hdu and converts the image into physical sizes at a given distance (pc)"""
+
+    # angular size of each pixel
+    radian_width = np.pi * abs(hdu[0].header["CDELT1"] * hdu[0].header["NAXIS1"]) / 180.0
+
+    # physocal size of each pixel in au
+    image_size = 2.0 * distance * np.tan(radian_width / 2.0) * au_pc
+
+    npix = hdu[0].header["NAXIS1"]
+
+    # Calculate the spatial extent
+    x_max = 1.0 * (image_size / 2.0) * au
+
+    return npix, x_max
+
+
+def calculate_keplerian_moment1(
+    r_min: float,
+    r_max: float,
+    num_r: float,
+    M_star: float = 1.0,
+    inc: float = 20.0,
+    distance: float = 200.0,
+    hdu: list | None = None,
+):
+    """This calculates the moment-1 map of a Keplerian disk with
+    a given star mass (solar masses) and inclination (degrees) and distance (pc)
+    If an hdu is given, the grid is made using WCS
+    """
+
+    # in order to calculate the moment to match an hdu's spatial extent
+    if hdu is not None:
+        r_max, num_r = get_image_physical_size(
+            hdu,
+            distance=distance,
+        )
+        r_min = -r_max
+
+    # make range x range
+    xs = np.linspace(r_min, r_max, num_r)
+
+    # turn into x and y grids
+    gx = np.tile(xs, (num_r, 1))
+    gy = np.tile(xs, (num_r, 1)).T
+
+    # turn into r, phi grid
+    gr = np.sqrt(gx**2 + gy**2)
+    gphi = np.arctan2(gy, gx)
+
+    # calculate Keplerian moment
+    moment1 = (
+        np.sqrt(G * M_star * Msol_kg * 1e-3 / (gr * au))
+        * np.cos(gphi)
+        * np.sin(inc * np.pi / 180.0)
+    )
+    moment1 *= 1e-3  # convert to km/s
+
+    return moment1
+
+
+def calculate_moments(
+    fits_path: str,
+    which_moments: tuple = (0, 1),
+    vel_min: float | None = None,
+    vel_max: float | None = None,
+    sub_cont: bool = True,
+):
+    """Calculates moments for a given fits file between a give velocity range"""
+
+    data, velax = bm.load_cube(fits_path)
+
+    # subtract continuum
+    if sub_cont:
+        data[:] -= 0.5 * (data[0] + data[-1])
+
+    # estimate RMS
+    rms = bm.estimate_RMS(data=data, N=5)
+
+    # get channel masks
+    first_channel = np.argmin(np.abs(velax - vel_min)) if vel_max is not None else 0
+    last_channel = np.argmin(np.abs(velax - vel_max)) if vel_max is not None else -1
+
+    channel_mask = bm.get_channel_mask(
+        data=data,
+        firstchannel=first_channel,
+        lastchannel=last_channel,
+    )
+    masked_data = data * channel_mask
+
+    # calculate all moments
+    calc_moments = {
+        i: moment_functions[i](velax=velax, data=masked_data, rms=rms) for i in which_moments
+    }
+
+    # get rid of NaNs
+    for i in which_moments:
+        if np.any(np.isnan(calc_moments[i])):
+            calc_moments[i][np.isnan(calc_moments[i])] = 0
+
+    return calc_moments
+
+
+def plot_moments(
+    calc_moments: dict | None = None,
+    fits_path: str | None = None,
+    which_moments: tuple = (0, 1),
+    vel_min: float | None = None,
+    vel_max: float | None = None,
+    sub_cont: bool = True,
+    sub_kep_moment: bool = False,
+    save: bool = False,
+    save_name: str = "",
+    plot_zero: bool = False,
+    M_star: float = 1.0,
+    inc: float = 20.0,
+    distance: float = 200.0,
+):
+    assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
+
+    if calc_moments is None:
+        calc_moments = calculate_moments(
+            fits_path,
+            which_moments=which_moments,
+            vel_min=vel_min,
+            vel_max=vel_max,
+            sub_cont=sub_cont,
+        )
+
+    for moment in calc_moments:
+        print(f"Plotting moment {moment}")
+
+        hdu = fits.open(fits_path)
+
+        if sub_kep_moment and moment == 1:
+            # calculate a keplerian moment-1 map to match
+            kep_moment = calculate_keplerian_moment1(
+                0.0, 0.0, 0.0, M_star=M_star, inc=inc, distance=distance, hdu=hdu
+            )
+
+        plot_wcs_data(
+            hdu,
+            plot_data=calc_moments[moment],
+            contour_value=0 if plot_zero else None,
+            save=save,
+            save_name=save_name,
+            subtract_data=kep_moment if sub_kep_moment and moment == 1 else None,
+            vmin=vel_min,
+            vmax=vel_max,
+            plot_cmap="RdBu_r",
+        )
