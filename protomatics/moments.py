@@ -142,6 +142,7 @@ def calculate_moments(
         if np.any(np.isnan(calc_moments[i][0])):
             calc_moments[i][0][np.isnan(calc_moments[i][0])] = 0
 
+    # optionally save
     if save_moments:
         for moment in calc_moments:
             bm.save_to_FITS(
@@ -174,6 +175,7 @@ def plot_moments(
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
 
+    # calculate moments if we haven't already
     if calc_moments is None:
         calc_moments, _ = calculate_moments(
             fits_path,
@@ -186,6 +188,7 @@ def plot_moments(
     for moment in calc_moments:
         print(f"Plotting moment {moment}")
 
+        # load the fits file to give us WCS
         hdu = fits.open(fits_path)
 
         if sub_kep_moment and moment == 1:
@@ -213,8 +216,10 @@ def get_pv_curve(
     """Gets the postion-velocity curve down the middle of a moment-1 map"""
 
     middlex = moment.shape[1] // 2
+    # the p-v wiggle is simply the minor axis
     pv_wiggle = moment[:, middlex]
 
+    # the rs are just the y values since we are on the minor axis
     rs = np.array([i - moment.shape[0] // 2 for i in range(len(pv_wiggle))])
 
     return rs, pv_wiggle

@@ -295,15 +295,18 @@ def plot_polar_and_get_contour(
     gx = np.tile(xs, (data.shape[0], 1))
     gy = np.tile(ys, (data.shape[1], 1)).T
 
+    # turn into polar coordinates
     rs = np.sqrt(gx**2 + gy**2)
-    phis = np.arctan2(gx, gy)
+    phis = np.arctan2(gy, gx)
 
     mplrc("xtick", labelsize=ticks)
     mplrc("ytick", labelsize=ticks)
 
     fig, ax = plt.subplots(figsize=(14.0, 10.5), subplot_kw={"projection": "polar"})
     plt.grid(False)
+    # make a mesh of the data
     im = ax.pcolormesh(phis, rs, data, cmap="RdBu_r")
+    # extract the contour for the contour_value
     contour = ax.contour(phis, rs, data, levels=[contour_value], colors="k")
 
     ax.tick_params(pad=20)
@@ -366,7 +369,7 @@ def polar_plot(rs: np.ndarray, phis: np.ndarray, rmax: float | None = None, scat
     mplrc("xtick", labelsize=ticks)
     mplrc("ytick", labelsize=ticks)
 
-    fig, ax = plt.subplots(figsize=(12, 12), subplot_kw={"projection": "polar"})
+    _, ax = plt.subplots(figsize=(12, 12), subplot_kw={"projection": "polar"})
 
     if scatter:
         plt.scatter(
@@ -378,6 +381,7 @@ def polar_plot(rs: np.ndarray, phis: np.ndarray, rmax: float | None = None, scat
             alpha=0.75,
         )
     else:
+        # split into where the curves are above and below the major axis
         negative = np.where(phis < 0)
         positive = np.where(phis > 0)
         plt.plot(phis[negative], rs[negative], lw=lw / 2, c=colors[0], ls=linestyles[0])
