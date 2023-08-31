@@ -37,7 +37,7 @@ moment_names = {
 def get_image_physical_size(
     hdu: list,
     distance: float = 200.0,
-):
+) -> tuple(int, float):
     """Takes an hdu and converts the image into physical sizes at a given distance (pc)"""
 
     # angular size of each pixel
@@ -62,7 +62,7 @@ def calculate_keplerian_moment1(
     inc: float = 20.0,
     distance: float = 200.0,
     hdu: list | None = None,
-):
+) -> np.ndarray:
     """
     This calculates the moment-1 map of a Keplerian disk with
     a given star mass (solar masses) and inclination (degrees) and distance (pc)
@@ -108,7 +108,7 @@ def calculate_moments(
     sub_cont: bool = True,
     save_moments: bool = False,
     save_path: str = "",
-):
+) -> tuple(dict, dict):
     """Calculates moments for a given fits file between a give velocity range"""
 
     data, velax = bm.load_cube(fits_path)
@@ -171,7 +171,7 @@ def plot_moments(
     M_star: float = 1.0,
     inc: float = 20.0,
     distance: float = 200.0,
-):
+) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
 
     if calc_moments is None:
@@ -209,7 +209,7 @@ def plot_moments(
 
 def get_pv_curve(
     moment: np.ndarray,
-):
+) -> tuple(np.ndarray, np.ndarray):
     """Gets the postion-velocity curve down the middle of a moment-1 map"""
 
     middlex = moment.shape[1] // 2
@@ -224,7 +224,7 @@ def split_pv_curve(
     rs: np.ndarray,
     pv_wiggle: np.ndarray,
     pv_rmin: float = 0.0,
-):
+) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """Splits the positon-velocity curve into the positive and negative curves"""
 
     pos_okay = np.where(rs > pv_rmin)
@@ -249,7 +249,7 @@ def extract_wiggle(
     vmax: float | None = None,
     rmin: float | None = None,
     rmax: float | None = None,
-):
+) -> tuple(np.ndarray, np.ndarray):
     """
     Extracts the v = 0 curve from a moment-1 map.
     This is done either in position-position space or position-velocity space.

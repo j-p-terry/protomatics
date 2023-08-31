@@ -58,7 +58,7 @@ def prepare_plot_data(
     line_index: int | None = None,
     channel: int | None = None,
     subtract_channels: list | None = None,
-):
+) -> np.ndarray:
     """Takes in data and prepares it to be plotted using imshow"""
     # get rid of any axes with dim = 1
     plot_data = scale_data * plot_data.copy().squeeze()
@@ -112,7 +112,7 @@ def plot_wcs_data(
     plot_beam: bool = False,
     plot_overlay_beam: bool = False,
     show: bool = True,
-):
+) -> None:
     """
     This plots a fits file in WCS with the option of overlaying another fits file as contours
     A value (contour_value) from the original data can also be plotted
@@ -281,7 +281,7 @@ def plot_polar_and_get_contour(
     rmax: float | None = None,
     units: str = "",
     show: bool = True,
-):
+) -> matplotlib.contour.QuadContourSet:
     """Makes a polar plot and extracts the contour with a given contour_value"""
 
     middlex = middlex if middlex is not None else data.shape[1] // 2
@@ -334,7 +334,7 @@ def get_wiggle_from_contour(
     contour: matplotlib.contour.QuadContourSet,
     rmin: float | None = None,
     rmax: float | None = None,
-):
+) -> tuple(np.ndarray, np.ndarray):
     """Goes through a polar contour (extracted with pyplot) and finds the curve with the most entries"""
 
     # iterates through each contour and finds the longest one
