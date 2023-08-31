@@ -67,7 +67,7 @@ def make_peak_vel_map(
 def calc_azimuthal_average(
     data: np.ndarray,
     r_grid: np.ndarray,
-) -> tuple(dict, np.ndarray):
+) -> tuple:
     """Calculates the azimuthal average of data"""
 
     # make radii integers in order to offer some finite resolution

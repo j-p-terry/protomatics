@@ -343,7 +343,7 @@ def get_wiggle_from_contour(
     contour: matplotlib.contour.QuadContourSet,
     rmin: Union[float, None] = None,
     rmax: Union[float, None] = None,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple:
     """Goes through a polar contour (extracted with pyplot) and finds the curve with the most entries"""
 
     # iterates through each contour and finds the longest one
@@ -371,7 +371,7 @@ def get_wiggle_from_contour(
 
 def polar_plot(
     rs: np.ndarray, phis: np.ndarray, rmax: Union[float, None] = None, scatter: bool = True
-):
+) -> None:
     """Makes a polar scatter/line plot"""
 
     mplrc("xtick", labelsize=ticks)

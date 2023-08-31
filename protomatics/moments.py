@@ -47,7 +47,7 @@ moment_units = {
 def get_image_physical_size(
     hdu: list,
     distance: float = 200.0,
-) -> tuple(int, float):
+) -> tuple:
     """Takes an hdu and converts the image into physical sizes at a given distance (pc)"""
 
     # angular size of each pixel
@@ -56,10 +56,10 @@ def get_image_physical_size(
     # physocal size of each pixel in au
     image_size = 2.0 * distance * np.tan(radian_width / 2.0) * au_pc
 
-    npix = hdu[0].header["NAXIS1"]
+    npix = int(hdu[0].header["NAXIS1"])
 
-    # Calculate the spatial extent
-    x_max = 1.0 * (image_size / 2.0) * au
+    # Calculate the spatial extent (au)
+    x_max = 1.0 * (image_size / 2.0)
 
     return npix, x_max
 
@@ -82,7 +82,7 @@ def calculate_keplerian_moment1(
 
     # in order to calculate the moment to match an hdu's spatial extent
     if hdu is not None:
-        r_max, num_r = get_image_physical_size(
+        num_r, r_max = get_image_physical_size(
             hdu,
             distance=distance,
         )
@@ -115,7 +115,7 @@ def calculate_moments(
     vel_max: Union[float, None] = None,
     sub_cont: bool = True,
     save_moments: bool = False,
-) -> tuple(dict, dict):
+) -> tuple:
     """Calculates moments for a given fits file between a give velocity range"""
 
     data, velax = bm.load_cube(fits_path)
@@ -220,7 +220,7 @@ def plot_moments(
 
 def get_pv_curve(
     moment: np.ndarray,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple:
     """Gets the postion-velocity curve down the middle of a moment-1 map"""
 
     middlex = moment.shape[1] // 2
@@ -237,7 +237,7 @@ def split_pv_curve(
     rs: np.ndarray,
     pv_wiggle: np.ndarray,
     pv_rmin: float = 0.0,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+) -> tuple:
     """Splits the positon-velocity curve into the positive and negative curves"""
 
     pos_okay = np.where(rs > pv_rmin)
@@ -262,7 +262,7 @@ def extract_wiggle(
     vmax: Union[float, None] = None,
     rmin: Union[float, None] = None,
     rmax: Union[float, None] = None,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple:
     """
     Extracts the v = 0 curve from a moment-1 map.
     This is done either in position-position space or position-velocity space.
