@@ -33,6 +33,7 @@ text = 26  # text size
 cmap = "magma"
 diverging_cmap = "RdBu_r"
 categorical_cmap = "Set2"
+# custom colormap
 colors = [
     "firebrick",
     "steelblue",
@@ -43,6 +44,7 @@ colors = [
     "darkgreen",
     "deeppink",
 ]
+# colors for overlaid contours
 overlay_colors = ["cyan", "lime", "magenta", "lightsalmon"]
 
 # marker and lines
