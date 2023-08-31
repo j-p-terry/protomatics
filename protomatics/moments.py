@@ -228,11 +228,12 @@ def extract_wiggle(
     """
     Extracts the v = 0 curve from a moment-1 map.
     This is done either in position-position space or position-velocity space.
-    position-position curves are taken from extracting polar contours of v = 0
+    position-position curves are taken from extracting polar contours of v = 0 and are in polar coordinates
     position-velocity curves are taken by a slice down the middle of the moment-1 map (with an appropriate rotation in degrees)
     """
 
     if in_pv_space:
+        # rotate the moment-1 image to align the minor axis with the center (parallel to y axis)
         if rotation_angle != 0:
             moment1 = scipy.ndimage.rotate(moment1.copy(), rotation_angle)
 
