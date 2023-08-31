@@ -128,7 +128,7 @@ def calculate_moments(
 
     # get channel masks
     first_channel = np.argmin(np.abs(velax - vel_min)) if vel_max is not None else 0
-    last_channel = np.argmin(np.abs(velax - vel_max)) if vel_max is not None else -1
+    last_channel = np.argmin(np.abs(velax - vel_max)) if vel_max is not None else len(velax)
 
     channel_mask = bm.get_channel_mask(
         data=data,
