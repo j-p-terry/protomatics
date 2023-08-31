@@ -15,7 +15,6 @@ from matplotlib.patches import Ellipse
 ##          This program contains the necessary functions   ##
 ##          to make various plots                           ##
 ##                                                          ##
-##                                                          ##
 ##############################################################
 ##############################################################
 
