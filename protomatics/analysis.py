@@ -31,6 +31,7 @@ def make_peak_vel_map(
     data, velax = bm.load_cube(fits_path)
     # get rid of any axes with dim = 1
     data = data.squeeze()
+    # get the proper emission line
     if len(data.shape) == 4:
         data = data[line_index, :, :, :]
 
