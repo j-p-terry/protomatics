@@ -33,6 +33,14 @@ moment_names = {
     9: "ninth",
 }
 
+moment_units = {
+    0: "Normalized",
+    1: r"km/s",
+    2: r"(km/s)$^{2}$",
+    8: r"(km/s)$^{8}$",
+    9: r"(km/s)$^{9}$",
+}
+
 
 def get_image_physical_size(
     hdu: list,
@@ -197,7 +205,7 @@ def plot_moments(
 
         plot_wcs_data(
             hdu,
-            plot_data=calc_moments[moment][0],
+            plot_data=calc_moments[moment],
             contour_value=0 if plot_zero else None,
             save=save,
             save_name=save_name,
@@ -205,6 +213,7 @@ def plot_moments(
             vmin=vel_min,
             vmax=vel_max,
             plot_cmap="RdBu_r",
+            plot_units=moment_units[moment],
         )
 
 
