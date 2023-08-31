@@ -25,6 +25,14 @@ moment_functions = {
     9: bm.collapse_ninth,
 }
 
+moment_names = {
+    0: "zeroth",
+    1: "first",
+    2: "second",
+    8: "eighth",
+    9: "ninth",
+}
+
 
 def get_image_physical_size(
     hdu: list,
@@ -98,6 +106,8 @@ def calculate_moments(
     vel_min: float | None = None,
     vel_max: float | None = None,
     sub_cont: bool = True,
+    save_moments: bool = False,
+    save_path: str = "",
 ):
     """Calculates moments for a given fits file between a give velocity range"""
 
@@ -122,16 +132,27 @@ def calculate_moments(
     masked_data = data * channel_mask
 
     # calculate all moments
+    # the first entry for a given key is the moment map and the second is the uncertainty map
     calc_moments = {
         i: moment_functions[i](velax=velax, data=masked_data, rms=rms) for i in which_moments
     }
 
     # get rid of NaNs
     for i in which_moments:
-        if np.any(np.isnan(calc_moments[i])):
-            calc_moments[i][np.isnan(calc_moments[i])] = 0
+        if np.any(np.isnan(calc_moments[i][0])):
+            calc_moments[i][0][np.isnan(calc_moments[i][0])] = 0
 
-    return calc_moments
+    if save_moments:
+        for moment in calc_moments:
+            bm.save_to_FITS(
+                moments=calc_moments[moment], method=moment_names[moment], path=save_path
+            )
+
+    # now we split into moments and uncertainties (save_to_FITS needs both, so we don't split before then)
+    calc_uncertainties = {i: calc_moments[i][1] for i in calc_moments}
+    calc_moments = {i: calc_moments[i][0] for i in calc_moments}
+
+    return calc_moments, calc_uncertainties
 
 
 def plot_moments(
@@ -152,7 +173,7 @@ def plot_moments(
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
 
     if calc_moments is None:
-        calc_moments = calculate_moments(
+        calc_moments, _ = calculate_moments(
             fits_path,
             which_moments=which_moments,
             vel_min=vel_min,
@@ -173,7 +194,7 @@ def plot_moments(
 
         plot_wcs_data(
             hdu,
-            plot_data=calc_moments[moment],
+            plot_data=calc_moments[moment][0],
             contour_value=0 if plot_zero else None,
             save=save,
             save_name=save_name,
