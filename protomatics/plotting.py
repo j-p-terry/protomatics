@@ -359,9 +359,7 @@ def polar_plot(rs: np.ndarray, phis: np.ndarray, rmax: float | None = None, scat
         plt.scatter(
             phis,
             rs,
-            # lw=lw,
-            # ls=linestyles[i],
-            # s=ps/50,
+            ps=s / 50.0,
             color=colors[0],
             marker=markers[0],
             alpha=0.75,
