@@ -4,6 +4,15 @@ from astopy.io import fits
 
 from .plotting import plot_wcs_data
 
+##############################################################
+##############################################################
+##                                                          ##
+##          This program contains the necessary functions   ##
+##          for various analyses of interest                ##
+##                                                          ##
+##############################################################
+##############################################################
+
 
 def make_peak_vel_map(
     fits_path: str,
