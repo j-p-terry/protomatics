@@ -91,9 +91,7 @@ def calculate_keplerian_moment1(
 
     # calculate Keplerian moment
     moment1 = (
-        np.sqrt(G * M_star * Msol_kg * 1e-3 / (gr * au))
-        * np.cos(gphi)
-        * np.sin(inc * np.pi / 180.0)
+        np.sqrt(G * M_star * Msol_kg / (gr * au)) * np.cos(gphi) * np.sin(inc * np.pi / 180.0)
     )
     moment1 *= 1e-3  # convert to km/s
 
