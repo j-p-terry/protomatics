@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from astropy.io import fits
 from astropy.visualization.wcsaxes import WCSAxes
 from astropy.wcs import WCS
 from matplotlib import colormaps as mplcm
@@ -81,7 +82,8 @@ def prepare_plot_data(
 
 
 def plot_wcs_data(
-    hdu: list,
+    hdu: list | None,
+    fits_path: str | None = None,
     plot_data: np.ndarray | None = None,
     channel: int | None = None,
     line_index: int | None = None,
@@ -113,6 +115,9 @@ def plot_wcs_data(
     A value (contour_value) from the original data can also be plotted
     A numpy array of the same dimension of the original data can be subtracted (subtract_data)
     """
+
+    if fits_path is not None:
+        hdu = fits.open(fits_path)
 
     mplrc("xtick", labelsize=ticks)
     mplrc("ytick", labelsize=ticks)
