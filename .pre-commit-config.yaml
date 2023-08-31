@@ -1,0 +1,61 @@
+# See https://pre-commit.com/hooks.html for more hooks
+# Install the pre-commit hooks below with
+# 'pre-commit install'
+
+# Auto-update the version of the hooks with
+# 'pre-commit autoupdate'
+
+# Run the hooks on all files with
+# 'pre-commit run --all'
+
+default_language_version:
+  python: python3
+
+ci:
+  autofix_commit_msg: 🎨 [pre-commit.ci] Auto format from pre-commit.com hooks
+  autoupdate_commit_msg: ⬆ [pre-commit.ci] pre-commit autoupdate
+  autofix_prs: true
+  autoupdate_schedule: quarterly
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      # - id: check-added-large-files
+      - id: check-toml
+      - id: check-yaml
+        args:
+          - --unsafe
+      - id: end-of-file-fixer
+      - id: pretty-format-json
+      - id: trailing-whitespace
+      - id: requirements-txt-fixer
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.9.0
+    hooks:
+      - id: pyupgrade
+        args:
+          - --py310-plus
+          - --keep-runtime-typing
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: 'v0.0.278'
+    hooks:
+      - id: ruff
+        args:
+          - --fix
+          - --target-version=py310
+          - --line-length=98
+          - --ignore=E501,S101,E402,C901,TRY003,BLE001
+          - --select=B,BLE,C4,DTZ,E,C,F,FLY,G,I,PD,PIE,PLW,RET,RUF,S,SIM,TID,TRY,W
+  - repo: https://github.com/asottile/blacken-docs
+    rev: 1.15.0
+    hooks:
+      - id: blacken-docs
+        args: [--line-length=98]
+        additional_dependencies: [black==22.3.0]
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+      - id: black
+        args: [--line-length=98]
