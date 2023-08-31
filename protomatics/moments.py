@@ -55,9 +55,11 @@ def calculate_keplerian_moment1(
     distance: float = 200.0,
     hdu: list | None = None,
 ):
-    """This calculates the moment-1 map of a Keplerian disk with
+    """
+    This calculates the moment-1 map of a Keplerian disk with
     a given star mass (solar masses) and inclination (degrees) and distance (pc)
     If an hdu is given, the grid is made using WCS
+    Assumes a square image
     """
 
     # in order to calculate the moment to match an hdu's spatial extent
