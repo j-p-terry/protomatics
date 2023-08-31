@@ -145,7 +145,9 @@ def calculate_moments(
     if save_moments:
         for moment in calc_moments:
             bm.save_to_FITS(
-                moments=calc_moments[moment], method=moment_names[moment], path=save_path
+                moments=calc_moments[moment],
+                method=moment_names[moment],
+                path=fits_path,
             )
 
     # now we split into moments and uncertainties (save_to_FITS needs both, so we don't split before then)
