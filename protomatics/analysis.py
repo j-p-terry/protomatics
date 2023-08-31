@@ -66,9 +66,20 @@ def make_peak_vel_map(
 
 def calc_azimuthal_average(
     data: np.ndarray,
-    r_grid: np.ndarray,
+    r_grid: Union[np.ndarray, None] = None,
 ) -> tuple:
     """Calculates the azimuthal average of data"""
+
+    # use pixels instead of physical distances
+    if r_grid is None:
+        middle = data.shape[0] // 2
+        xs = np.array([i - middle for i in range(data.shape[0])])
+        # turn into x and y grids
+        gx = np.tile(xs, (data.shape[0], 1))
+        gy = np.tile(xs, (data.shape[0], 1)).T
+
+        # turn into r grid
+        r_grid = np.sqrt(gx**2 + gy**2)
 
     # make radii integers in order to offer some finite resolution
     r_grid = r_grid.copy().astype(np.int)
