@@ -84,7 +84,7 @@ def prepare_plot_data(
 
 
 def plot_wcs_data(
-    hdu: list | None,
+    hdu: int | None,
     fits_path: str | None = None,
     plot_data: np.ndarray | None = None,
     channel: int | None = None,
