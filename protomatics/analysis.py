@@ -1,3 +1,5 @@
+from typing import Union
+
 import bettermoments as bm
 import numpy as np
 from astopy.io import fits
@@ -16,8 +18,8 @@ from .plotting import plot_wcs_data
 
 def make_peak_vel_map(
     fits_path: str,
-    vel_max: float | None = None,
-    vel_min: float | None = None,
+    vel_max: Union[float, None] = None,
+    vel_min: Union[float, None] = None,
     line_index: int = 1,
     sub_cont: bool = True,
     plot: bool = False,
