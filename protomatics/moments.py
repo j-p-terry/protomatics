@@ -131,8 +131,8 @@ def calculate_moments(
     )
     masked_data = data * channel_mask
 
-    # calculate all moments
-    # the first entry for a given key is the moment map and the second is the uncertainty map
+    # calculate all moments, each is returned as a tuple with two entries
+    # the first entry is the moment map and the second is the uncertainty map
     calc_moments = {
         i: moment_functions[i](velax=velax, data=masked_data, rms=rms) for i in which_moments
     }
