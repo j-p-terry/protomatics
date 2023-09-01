@@ -159,7 +159,7 @@ def calc_azimuthal_average(
 
 def mask_keplerian_velocity(
     fits_path: str,
-    vel_tol: float = 0.05,
+    vel_tol: float = 1.0,
     vel_max: Optional[float] = None,
     vel_min: Optional[float] = None,
     sub_cont: bool = True,

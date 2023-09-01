@@ -310,6 +310,8 @@ def plot_polar_and_get_contour(
     show: bool = True,
     rlabel_position: float = 300.0,
     plot_cmap: str = "RdBu_r",
+    save: bool = False,
+    save_name: str = "",
     **kwargs,
 ) -> matplotlib.contour.QuadContourSet:
     """Makes a polar plot and extracts the contour with a given contour_value
@@ -363,6 +365,9 @@ def plot_polar_and_get_contour(
         ax.set_rlabel_position(0.95 * rmax)
         ax.set_rlim(0, rmax)
 
+    if save:
+        plt.savefig(save_name)
+
     if show:
         plt.show()
     else:
@@ -407,6 +412,9 @@ def polar_plot(
     rmax: Optional[float] = None,
     scatter: bool = True,
     rlabel_position: float = 300.0,
+    show: bool = True,
+    save: bool = False,
+    save_name: str = "",
     **kwargs,
 ) -> None:
     """Makes a polar scatter/line plot
@@ -415,6 +423,7 @@ def polar_plot(
     kwargs[lines] overrides the default linestyle list
     kwargs[linewidth] overrides the default linewidth
     kwargs[color_list] overrides the default color list
+    kwargs[os] overrides the default scatter point size
     """
 
     # get font information if given
@@ -424,6 +433,8 @@ def polar_plot(
     lines = kwargs.get("lines", linestyles)
     linewidth = kwargs.get("linewidth", lw)
     color_list = kwargs.get("color_list", colors)
+    # scatter attributes
+    ps = kwargs.get("ps", s)
 
     mplrc("xtick", labelsize=tick_font)
     mplrc("ytick", labelsize=ticks)
@@ -434,7 +445,7 @@ def polar_plot(
         plt.scatter(
             phis,
             rs,
-            ps=s / 50.0,
+            ps=ps / 50.0,
             color=colors[0],
             marker=markers[0],
             alpha=0.75,
@@ -453,4 +464,10 @@ def polar_plot(
         ax.set_rlabel_position(0.95 * rmax)
         ax.set_rlim(0, rmax)
 
-    plt.show()
+    if save:
+        plt.savefig(save_name)
+
+    if show:
+        plt.show()
+    else:
+        plt.close()

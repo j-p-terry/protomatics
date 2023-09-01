@@ -233,6 +233,7 @@ def plot_moments(
     M_star: float = 1.0,
     inc: float = 20.0,
     distance: float = 200.0,
+    show: bool = True,
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
 
@@ -269,6 +270,7 @@ def plot_moments(
             vmax=vel_max,
             plot_cmap="RdBu_r",
             plot_units=moment_units[moment],
+            show=show,
         )
 
 
