@@ -217,6 +217,11 @@ def plot_wcs_data(
 
         overlay_data = overlay_hdu[0].data.copy()
 
+        # make sure we have a channel axis to iterate over (e.g. for continuum)
+        if len(overlay_data.shape) == 2:
+            overlay_data = overlay_data[np.newaxis, :, :]
+            overlay_channels = [0]
+
         # get each channel to overlay
         for i, overlay_channel in enumerate(overlay_channels):
             this_overlay_data = prepare_plot_data(
