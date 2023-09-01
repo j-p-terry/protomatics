@@ -346,7 +346,7 @@ def plot_polar_and_get_contour(
 
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": "polar"})
     plt.grid(False)
-    # make a mesh of the data
+    # make a mesh of the data (grid makes warnings, but whatever)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         im = ax.pcolormesh(phis, rs, data, cmap=plot_cmap)
