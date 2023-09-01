@@ -24,6 +24,7 @@ setuptools.setup(
         "bettermoments",
         "matplotlib",
         "numpy",
+        "pytest",
         "scipy",
     ],
     classifiers=[

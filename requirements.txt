@@ -2,4 +2,5 @@ astropy
 bettermoments
 matplotlib
 numpy
+pytest
 scipy
