@@ -116,20 +116,36 @@ def plot_wcs_data(
     plot_beam: bool = False,
     plot_overlay_beam: bool = False,
     show: bool = True,
+    **kwargs,
 ) -> None:
     """
     This plots a fits file in WCS with the option of overlaying another fits file as contours
     A value (contour_value) from the original data can also be plotted
     A numpy array of the same dimension of the original data can be subtracted (subtract_data)
+    kwargs[label_font, tick_font, and legend_font] can be used to override default font sizes
+    kwargs[figsize] overrides the default figsize
+    kwargs[overlay_cmap, overlay_color_list] overrides the default colors of the overlaid contours
+    kwargs[lines] overrides the default linestyle list
+    kwargs[linewidth] overrides the default linewidth
     """
+
+    # get font information if given
+    label_font = kwargs.get("label_font", labels)
+    tick_font = kwargs.get("tick_font", ticks)
+    legend_font = kwargs.get("legend_font", legends)
+    # override default figure size
+    figsize = kwargs.get("figsize", (14.0, 10.5))
+    # override default colormaps
+    overlay_cmap = kwargs.get("overlay_cmap", categorical_cmap)
+    overlay_color_list = kwargs.get("overlay_color_list", colors)
 
     if fits_path is not None:
         hdu = fits.open(fits_path)
 
-    mplrc("xtick", labelsize=ticks)
-    mplrc("ytick", labelsize=ticks)
+    mplrc("xtick", labelsize=tick_font)
+    mplrc("ytick", labelsize=tick_font)
 
-    fig = plt.figure(figsize=(14.0, 10.5))
+    fig = plt.figure(figsize=figsize)
 
     # set middle to 0 in order to just get angular size (don't care about position)
     hdu[0].header["CRVAL1"] = 0.0
@@ -177,8 +193,8 @@ def plot_wcs_data(
         plt.imshow(plot_data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax)
 
     cbar = plt.colorbar(fraction=0.045, pad=0.005)
-    cbar.ax.set_ylabel(plot_units, rotation=270, fontsize=titles)
-    cbar.ax.tick_params(labelsize=ticks)
+    cbar.ax.set_ylabel(plot_units, rotation=270, fontsize=legend_font)
+    cbar.ax.tick_params(labelsize=tick_font)
     cbar.ax.get_yaxis().labelpad = 40
 
     # overlay a contour of the original data
@@ -193,11 +209,11 @@ def plot_wcs_data(
 
         # ensure there are enough colors for all overlays
         if len(overlay_channels) > len(overlay_colors):
-            overlay_cmap = categorical_cmap
+            overlay_cmap = overlay_cmap
             overlay_cmap = mplcm.get_cmap(overlay_cmap).colors
             overlay_cmap = ListedColormap(overlay_cmap[: len(overlay_channels)])
         else:
-            overlay_cmap = overlay_colors[:]
+            overlay_cmap = overlay_color_list[:]
 
         overlay_data = overlay_hdu[0].data.copy()
 
@@ -227,8 +243,8 @@ def plot_wcs_data(
     y_label = r"$\Delta$ DEC"
     x_label = r"$\Delta$ RA"
 
-    plt.xlabel(x_label, fontsize=labels)
-    plt.ylabel(y_label, fontsize=labels)
+    plt.xlabel(x_label, fontsize=label_font)
+    plt.ylabel(y_label, fontsize=label_font)
 
     # set plot limits
     x_size = plot_data.shape[1]
@@ -287,8 +303,19 @@ def plot_polar_and_get_contour(
     rmax: Optional[float] = None,
     units: str = "",
     show: bool = True,
+    rlabel_position: float = 300.0,
+    plot_cmap: str = "RdBu_r",
+    **kwargs,
 ) -> matplotlib.contour.QuadContourSet:
-    """Makes a polar plot and extracts the contour with a given contour_value"""
+    """Makes a polar plot and extracts the contour with a given contour_value
+    kwargs[tick_font, and legend_font] can be used to override default font sizes
+    kwargs[figsize] overrides the default figsize
+    """
+
+    # get font information if given
+    tick_font = kwargs.get("tick_font", ticks)
+    legend_font = kwargs.get("legend_font", legends)
+    figsize = kwargs.get("figsize", (14.0, 10.5))
 
     middlex = middlex if middlex is not None else data.shape[1] // 2
     middley = middley if middley is not None else data.shape[0] // 2
@@ -305,13 +332,13 @@ def plot_polar_and_get_contour(
     rs = np.sqrt(gx**2 + gy**2)
     phis = np.arctan2(gy, gx)
 
-    mplrc("xtick", labelsize=ticks)
-    mplrc("ytick", labelsize=ticks)
+    mplrc("xtick", labelsize=tick_font)
+    mplrc("ytick", labelsize=tick_font)
 
-    fig, ax = plt.subplots(figsize=(14.0, 10.5), subplot_kw={"projection": "polar"})
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": "polar"})
     plt.grid(False)
     # make a mesh of the data
-    im = ax.pcolormesh(phis, rs, data, cmap="RdBu_r")
+    im = ax.pcolormesh(phis, rs, data, cmap=plot_cmap)
     # extract the contour for the contour_value
     contour = ax.contour(phis, rs, data, levels=[contour_value], colors="k")
 
@@ -320,12 +347,12 @@ def plot_polar_and_get_contour(
     im.set_clim(vmin, vmax)
 
     cbar = fig.colorbar(im, fraction=0.045, pad=0.025, extend="both")
-    cbar.ax.set_ylabel(units, rotation=270, fontsize=titles, labelpad=0.05)
-    cbar.ax.tick_params(labelsize=ticks)
+    cbar.ax.set_ylabel(units, rotation=270, fontsize=legend_font, labelpad=0.05)
+    cbar.ax.tick_params(labelsize=tick_font)
     cbar.ax.get_yaxis().labelpad = 40
 
     if rmax is None:
-        ax.set_rlabel_position(300)
+        ax.set_rlabel_position(rlabel_position)
 
     else:
         ax.set_rlabel_position(0.95 * rmax)
@@ -370,14 +397,33 @@ def get_wiggle_from_contour(
 
 
 def polar_plot(
-    rs: np.ndarray, phis: np.ndarray, rmax: Optional[float] = None, scatter: bool = True
+    rs: np.ndarray,
+    phis: np.ndarray,
+    rmax: Optional[float] = None,
+    scatter: bool = True,
+    rlabel_position: float = 300.0,
+    **kwargs,
 ) -> None:
-    """Makes a polar scatter/line plot"""
+    """Makes a polar scatter/line plot
+    kwargs[tick_font] can be used to override default font sizes
+    kwargs[figsize] overrides the default figsize
+    kwargs[lines] overrides the default linestyle list
+    kwargs[linewidth] overrides the default linewidth
+    kwargs[color_list] overrides the default color list
+    """
 
-    mplrc("xtick", labelsize=ticks)
+    # get font information if given
+    tick_font = kwargs.get("tick_font", ticks)
+    figsize = kwargs.get("figsize", (12.0, 12.0))
+    # line attributes
+    lines = kwargs.get("lines", linestyles)
+    linewidth = kwargs.get("linewidth", lw)
+    color_list = kwargs.get("color_list", colors)
+
+    mplrc("xtick", labelsize=tick_font)
     mplrc("ytick", labelsize=ticks)
 
-    _, ax = plt.subplots(figsize=(12, 12), subplot_kw={"projection": "polar"})
+    _, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": "polar"})
 
     if scatter:
         plt.scatter(
@@ -392,11 +438,11 @@ def polar_plot(
         # split into where the curves are above and below the major axis
         negative = np.where(phis < 0)
         positive = np.where(phis > 0)
-        plt.plot(phis[negative], rs[negative], lw=lw / 2, c=colors[0], ls=linestyles[0])
-        plt.plot(phis[positive], rs[positive], lw=lw / 2, c=colors[0], ls=linestyles[0])
+        plt.plot(phis[negative], rs[negative], lw=linewidth / 2, c=color_list[0], ls=lines[0])
+        plt.plot(phis[positive], rs[positive], lw=linewidth / 2, c=color_list[0], ls=lines[0])
 
     if rmax is None:
-        ax.set_rlabel_position(300)
+        ax.set_rlabel_position(rlabel_position)
 
     else:
         ax.set_rlabel_position(0.95 * rmax)
