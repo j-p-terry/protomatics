@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 
 import matplotlib
@@ -55,15 +56,16 @@ linestyles = ["-", "--", ":", "-."]
 
 
 def prepare_plot_data(
-    plot_data: np.ndarray,
+    data: np.ndarray,
     scale_data: float = 1.0,
-    line_index: Optional[int] = None,
-    channel: Optional[int] = None,
+    line_index: Optional[int] = 1,
+    channel: Optional[int] = 0,
     subtract_channels: Optional[list] = None,
 ) -> np.ndarray:
     """Takes in data and prepares it to be plotted using imshow"""
     # get rid of any axes with dim = 1
-    plot_data = scale_data * plot_data.copy().squeeze()
+    data *= scale_data
+    plot_data = data.squeeze()
 
     # choose transition line if option
     if len(plot_data.shape) == 4:
@@ -89,8 +91,8 @@ def plot_wcs_data(
     hdu: Optional[list],
     fits_path: Optional[str] = None,
     plot_data: Optional[np.ndarray] = None,
-    channel: Optional[int] = None,
-    line_index: Optional[int] = None,
+    channel: Optional[int] = 0,
+    line_index: Optional[int] = 0,
     contour_value: Optional[float] = None,
     save: bool = False,
     save_name: Optional[str] = None,
@@ -345,7 +347,9 @@ def plot_polar_and_get_contour(
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": "polar"})
     plt.grid(False)
     # make a mesh of the data
-    im = ax.pcolormesh(phis, rs, data, cmap=plot_cmap)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        im = ax.pcolormesh(phis, rs, data, cmap=plot_cmap)
     # extract the contour for the contour_value
     contour = ax.contour(phis, rs, data, levels=[contour_value], colors="k")
 
@@ -445,7 +449,7 @@ def polar_plot(
         plt.scatter(
             phis,
             rs,
-            ps=ps / 50.0,
+            s=ps / 50.0,
             color=colors[0],
             marker=markers[0],
             alpha=0.75,

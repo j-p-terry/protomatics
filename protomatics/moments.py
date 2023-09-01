@@ -3,9 +3,8 @@ from typing import Optional
 import bettermoments as bm
 import numpy as np
 import scipy
-from astopy.io import fits
+from astropy.io import fits
 
-from .analysis import make_grids, mask_keplerian_velocity
 from .constants import G, Msol_kg, au
 from .plotting import get_wiggle_from_contour, plot_polar_and_get_contour, plot_wcs_data
 
@@ -60,6 +59,9 @@ def calculate_keplerian_moment1(
     If an hdu is given, the grid is made using WCS
     Assumes a square image
     """
+
+    # avoid circular imports
+    from .analysis import make_grids
 
     gr, gphi, _, _ = make_grids(
         hdu,
@@ -134,6 +136,7 @@ def make_moments(
 
     # calculate all moments, each is returned as a tuple with two entries
     # the first entry is the moment map and the second is the uncertainty map
+    print(f"which moments: {which_moments}")
     calc_moments = {
         i: moment_functions[i](velax=velax, data=masked_data, rms=rms) for i in which_moments
     }
@@ -176,6 +179,9 @@ def make_masked_moments(
     save_moments: bool = False,
 ) -> tuple:
     """This gets the Keplerian and non-Keplerian components of the data and calculates moments"""
+
+    # avoid circular imports
+    from .analysis import mask_keplerian_velocity
 
     # split the data
     kep_data, non_kep_data, velax = mask_keplerian_velocity(

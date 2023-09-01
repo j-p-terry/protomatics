@@ -2,10 +2,9 @@ from typing import Optional
 
 import bettermoments as bm
 import numpy as np
-from astopy.io import fits
+from astropy.io import fits
 
 from .constants import au_pc
-from .moments import calculate_keplerian_moment1
 from .plotting import plot_wcs_data
 
 ##############################################################
@@ -84,9 +83,9 @@ def make_peak_vel_map(
 ) -> np.ndarray:
     """Makes a map of the peak velocity at each pixel"""
 
-    data, velax = bm.load_cube(fits_path)
+    full_data, velax = bm.load_cube(fits_path)
     # get rid of any axes with dim = 1
-    data = data.squeeze()
+    data = full_data.squeeze()
     # get the proper emission line
     if len(data.shape) == 4:
         data = data[line_index, :, :, :]
@@ -138,7 +137,7 @@ def calc_azimuthal_average(
         r_grid = np.sqrt(gx**2 + gy**2)
 
     # make radii integers in order to offer some finite resolution
-    r_grid = r_grid.copy().astype(np.int)
+    r_grid = r_grid.copy().astype(np.int32)
 
     # Extract unique radii and skip as needed
     rs = np.unique(r_grid)
@@ -174,6 +173,9 @@ def mask_keplerian_velocity(
     This function creates two new data cubes: one with the velocities within some tolerance of the keplerian
     velocity at that location and another that is outside of that range (i.e, the keplerian data and non-keplerian data)
     """
+
+    # avoid circular imports
+    from .moments import calculate_keplerian_moment1
 
     # get cube
     data, velax = bm.load_cube(fits_path)
