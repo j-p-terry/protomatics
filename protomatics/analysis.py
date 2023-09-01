@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional
 
 import bettermoments as bm
 import numpy as np
@@ -18,8 +18,8 @@ from .plotting import plot_wcs_data
 
 def make_peak_vel_map(
     fits_path: str,
-    vel_max: Union[float, None] = None,
-    vel_min: Union[float, None] = None,
+    vel_max: Optional[float] = None,
+    vel_min: Optional[float] = None,
     line_index: int = 1,
     sub_cont: bool = True,
     plot: bool = False,
@@ -66,7 +66,7 @@ def make_peak_vel_map(
 
 def calc_azimuthal_average(
     data: np.ndarray,
-    r_grid: Union[np.ndarray, None] = None,
+    r_grid: Optional[np.ndarray] = None,
 ) -> tuple:
     """Calculates the azimuthal average of data"""
 

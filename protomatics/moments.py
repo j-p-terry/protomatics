@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional
 
 import bettermoments as bm
 import numpy as np
@@ -71,7 +71,7 @@ def calculate_keplerian_moment1(
     M_star: float = 1.0,
     inc: float = 20.0,
     distance: float = 200.0,
-    hdu: Union[list, None] = None,
+    hdu: Optional[list] = None,
 ) -> np.ndarray:
     """
     This calculates the moment-1 map of a Keplerian disk with
@@ -111,8 +111,8 @@ def calculate_keplerian_moment1(
 def calculate_moments(
     fits_path: str,
     which_moments: tuple = (0, 1),
-    vel_min: Union[float, None] = None,
-    vel_max: Union[float, None] = None,
+    vel_min: Optional[float] = None,
+    vel_max: Optional[float] = None,
     sub_cont: bool = True,
     save_moments: bool = False,
 ) -> tuple:
@@ -166,11 +166,11 @@ def calculate_moments(
 
 
 def plot_moments(
-    calc_moments: Union[dict, None] = None,
-    fits_path: Union[str, None] = None,
+    calc_moments: Optional[dict] = None,
+    fits_path: Optional[str] = None,
     which_moments: tuple = (0, 1),
-    vel_min: Union[float, None] = None,
-    vel_max: Union[float, None] = None,
+    vel_min: Optional[float] = None,
+    vel_max: Optional[float] = None,
     sub_cont: bool = True,
     sub_kep_moment: bool = False,
     save: bool = False,
@@ -258,10 +258,10 @@ def extract_wiggle(
     moment1: np.ndarray,
     in_pv_space: bool = False,
     rotation_angle: float = 0.0,
-    vmin: Union[float, None] = None,
-    vmax: Union[float, None] = None,
-    rmin: Union[float, None] = None,
-    rmax: Union[float, None] = None,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    rmin: Optional[float] = None,
+    rmax: Optional[float] = None,
 ) -> tuple:
     """
     Extracts the v = 0 curve from a moment-1 map.

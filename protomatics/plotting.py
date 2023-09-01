@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -57,9 +57,9 @@ linestyles = ["-", "--", ":", "-."]
 def prepare_plot_data(
     plot_data: np.ndarray,
     scale_data: float = 1.0,
-    line_index: Union[int, None] = None,
-    channel: Union[int, None] = None,
-    subtract_channels: Union[list, None] = None,
+    line_index: Optional[int] = None,
+    channel: Optional[int] = None,
+    subtract_channels: Optional[list] = None,
 ) -> np.ndarray:
     """Takes in data and prepares it to be plotted using imshow"""
     # get rid of any axes with dim = 1
@@ -86,31 +86,31 @@ def prepare_plot_data(
 
 
 def plot_wcs_data(
-    hdu: Union[int, None],
-    fits_path: Union[str, None] = None,
-    plot_data: Union[np.ndarray, None] = None,
-    channel: Union[int, None] = None,
-    line_index: Union[int, None] = None,
-    contour_value: Union[float, None] = None,
+    hdu: Optional[int],
+    fits_path: Optional[str] = None,
+    plot_data: Optional[np.ndarray] = None,
+    channel: Optional[int] = None,
+    line_index: Optional[int] = None,
+    contour_value: Optional[float] = None,
     save: bool = False,
-    save_name: Union[str, None] = None,
+    save_name: Optional[str] = None,
     trim: tuple = (None, None),
-    vmin: Union[float, None] = None,
-    vmax: Union[float, None] = None,
-    overlay_hdu: Union[list, None] = None,
-    overlay_pmin: Union[float, None] = None,
-    overlay_channels: Union[list, None] = None,
-    subtract_data: Union[np.ndarray, None] = None,
-    subtract_channels: Union[list, None] = None,
-    subtract_overlay_channels: Union[list, None] = None,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    overlay_hdu: Optional[list] = None,
+    overlay_pmin: Optional[float] = None,
+    overlay_channels: Optional[list] = None,
+    subtract_data: Optional[np.ndarray] = None,
+    subtract_channels: Optional[list] = None,
+    subtract_overlay_channels: Optional[list] = None,
     num_ticks: int = 5,
     log: bool = False,
     scale_data: float = 1.0,
     overlay_data_scale: float = 1.0,
     plot_cmap: str = "magma",
     plot_units: str = "",
-    beam_position: Union[list, None] = None,
-    overlay_beam_position: Union[list, None] = None,
+    beam_position: Optional[list] = None,
+    overlay_beam_position: Optional[list] = None,
     beam_color: str = "white",
     overlay_beam_color: str = "limegreen",
     plot_beam: bool = False,
@@ -280,11 +280,11 @@ def plot_wcs_data(
 def plot_polar_and_get_contour(
     data: np.ndarray,
     contour_value: float = 0.0,
-    middlex: Union[int, None] = None,
-    middley: Union[int, None] = None,
-    vmin: Union[float, None] = None,
-    vmax: Union[float, None] = None,
-    rmax: Union[float, None] = None,
+    middlex: Optional[int] = None,
+    middley: Optional[int] = None,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    rmax: Optional[float] = None,
     units: str = "",
     show: bool = True,
 ) -> matplotlib.contour.QuadContourSet:
@@ -341,8 +341,8 @@ def plot_polar_and_get_contour(
 
 def get_wiggle_from_contour(
     contour: matplotlib.contour.QuadContourSet,
-    rmin: Union[float, None] = None,
-    rmax: Union[float, None] = None,
+    rmin: Optional[float] = None,
+    rmax: Optional[float] = None,
 ) -> tuple:
     """Goes through a polar contour (extracted with pyplot) and finds the curve with the most entries"""
 
@@ -370,7 +370,7 @@ def get_wiggle_from_contour(
 
 
 def polar_plot(
-    rs: np.ndarray, phis: np.ndarray, rmax: Union[float, None] = None, scatter: bool = True
+    rs: np.ndarray, phis: np.ndarray, rmax: Optional[float] = None, scatter: bool = True
 ) -> None:
     """Makes a polar scatter/line plot"""
 
