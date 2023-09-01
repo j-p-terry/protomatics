@@ -5,7 +5,8 @@ import numpy as np
 import scipy
 from astopy.io import fits
 
-from .constants import G, Msol_kg, au, au_pc
+from .analysis import make_grids, mask_keplerian_velocity
+from .constants import G, Msol_kg, au
 from .plotting import get_wiggle_from_contour, plot_polar_and_get_contour, plot_wcs_data
 
 ##############################################################
@@ -44,30 +45,10 @@ moment_units = {
 }
 
 
-def get_image_physical_size(
-    hdu: list,
-    distance: float = 200.0,
-) -> tuple:
-    """Takes an hdu and converts the image into physical sizes at a given distance (pc)"""
-
-    # angular size of each pixel
-    radian_width = np.pi * abs(hdu[0].header["CDELT1"] * hdu[0].header["NAXIS1"]) / 180.0
-
-    # physocal size of each pixel in au
-    image_size = 2.0 * distance * np.tan(radian_width / 2.0) * au_pc
-
-    npix = int(hdu[0].header["NAXIS1"])
-
-    # Calculate the spatial extent (au)
-    x_max = 1.0 * (image_size / 2.0)
-
-    return npix, x_max
-
-
 def calculate_keplerian_moment1(
-    r_min: float,
-    r_max: float,
-    num_r: float,
+    r_min: Optional[float] = 0.0,
+    r_max: Optional[float] = 300.0,
+    num_r: Optional[int] = None,
     M_star: float = 1.0,
     inc: float = 20.0,
     distance: float = 200.0,
@@ -80,24 +61,13 @@ def calculate_keplerian_moment1(
     Assumes a square image
     """
 
-    # in order to calculate the moment to match an hdu's spatial extent
-    if hdu is not None:
-        num_r, r_max = get_image_physical_size(
-            hdu,
-            distance=distance,
-        )
-        r_min = -r_max
-
-    # make range x range
-    xs = np.linspace(r_min, r_max, num_r)
-
-    # turn into x and y grids
-    gx = np.tile(xs, (num_r, 1))
-    gy = np.tile(xs, (num_r, 1)).T
-
-    # turn into r, phi grid
-    gr = np.sqrt(gx**2 + gy**2)
-    gphi = np.arctan2(gy, gx)
+    gr, gphi, _, _ = make_grids(
+        hdu,
+        r_min=r_min,
+        r_max=r_max,
+        num_r=num_r,
+        distance=distance,
+    )
 
     # calculate Keplerian moment
     moment1 = (
@@ -108,15 +78,13 @@ def calculate_keplerian_moment1(
     return moment1
 
 
-def calculate_moments(
+def prepare_moment_data(
     fits_path: str,
-    which_moments: tuple = (0, 1),
     vel_min: Optional[float] = None,
     vel_max: Optional[float] = None,
     sub_cont: bool = True,
-    save_moments: bool = False,
 ) -> tuple:
-    """Calculates moments for a given fits file between a give velocity range"""
+    """Prepares data for making moments"""
 
     data, velax = bm.load_cube(fits_path)
 
@@ -138,6 +106,32 @@ def calculate_moments(
     )
     masked_data = data * channel_mask
 
+    return masked_data, velax, rms
+
+
+def make_moments(
+    fits_path: str,
+    which_moments: tuple = (0, 1, 2),
+    vel_min: Optional[float] = None,
+    vel_max: Optional[float] = None,
+    sub_cont: bool = True,
+    save_moments: bool = False,
+    masked_data: Optional[np.ndarray] = None,
+    velax: Optional[np.ndarray] = None,
+    rms: Optional[np.ndarray] = None,
+    outname: Optional[str] = None,
+) -> tuple:
+    """Calculates moments for a given fits file between a give velocity range"""
+
+    # get data if not provided
+    if masked_data is None:
+        masked_data, velax, rms = prepare_moment_data(
+            fits_path,
+            vel_min=vel_min,
+            vel_max=vel_max,
+            sub_cont=sub_cont,
+        )
+
     # calculate all moments, each is returned as a tuple with two entries
     # the first entry is the moment map and the second is the uncertainty map
     calc_moments = {
@@ -156,6 +150,7 @@ def calculate_moments(
                 moments=calc_moments[moment],
                 method=moment_names[moment],
                 path=fits_path,
+                outname=outname,
             )
 
     # now we split into moments and uncertainties (save_to_FITS needs both, so we don't split before then)
@@ -163,6 +158,65 @@ def calculate_moments(
     calc_moments = {i: calc_moments[i][0] for i in calc_moments}
 
     return calc_moments, calc_uncertainties
+
+
+def make_masked_moments(
+    fits_path: str,
+    which_moments: tuple = (0, 1, 2),
+    vel_tol: float = 1.0,
+    vel_max: Optional[float] = None,
+    vel_min: Optional[float] = None,
+    sub_cont: bool = True,
+    distance: float = 200.0,
+    r_min: Optional[float] = None,
+    r_max: Optional[float] = None,
+    num_r: Optional[int] = None,
+    M_star: float = 1.0,
+    inc: float = 20.0,
+    save_moments: bool = False,
+) -> tuple:
+    """This gets the Keplerian and non-Keplerian components of the data and calculates moments"""
+
+    # split the data
+    kep_data, non_kep_data, velax = mask_keplerian_velocity(
+        fits_path,
+        vel_tol=vel_tol,
+        vel_min=vel_min,
+        vel_max=vel_max,
+        distance=distance,
+        inc=inc,
+        M_star=M_star,
+        sub_cont=sub_cont,
+        num_r=num_r,
+        r_min=r_min,
+        r_max=r_max,
+    )
+
+    # estimate RMS
+    kep_rms = bm.estimate_RMS(data=kep_data, N=5)
+    non_kep_rms = bm.estimate_RMS(data=non_kep_data, N=5)
+
+    # make moments using masked data
+    kep_moments, kep_uncertainties = make_moments(
+        fits_path,
+        which_moments=which_moments,
+        save_moments=save_moments,
+        masked_data=kep_data,
+        velax=velax,
+        rms=kep_rms,
+        outname="keplerian",
+    )
+    non_kep_moments, non_kep_uncertainties = make_moments(
+        fits_path,
+        which_moments=which_moments,
+        save_moments=save_moments,
+        masked_data=non_kep_data,
+        velax=velax,
+        rms=non_kep_rms,
+        outname="non_keplerian",
+    )
+
+    return kep_moments, kep_uncertainties, non_kep_moments, non_kep_uncertainties
 
 
 def plot_moments(
@@ -184,7 +238,7 @@ def plot_moments(
 
     # calculate moments if we haven't already
     if calc_moments is None:
-        calc_moments, _ = calculate_moments(
+        calc_moments, _ = make_moments(
             fits_path,
             which_moments=which_moments,
             vel_min=vel_min,

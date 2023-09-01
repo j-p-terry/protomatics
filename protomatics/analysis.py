@@ -4,6 +4,8 @@ import bettermoments as bm
 import numpy as np
 from astopy.io import fits
 
+from .constants import au_pc
+from .moments import calculate_keplerian_moment1
 from .plotting import plot_wcs_data
 
 ##############################################################
@@ -14,6 +16,60 @@ from .plotting import plot_wcs_data
 ##                                                          ##
 ##############################################################
 ##############################################################
+
+
+def get_image_physical_size(
+    hdu: list,
+    distance: float = 200.0,
+) -> tuple:
+    """Takes an hdu and converts the image into physical sizes at a given distance (pc)"""
+
+    # angular size of each pixel
+    radian_width = np.pi * abs(hdu[0].header["CDELT1"] * hdu[0].header["NAXIS1"]) / 180.0
+
+    # physocal size of each pixel in au
+    image_size = 2.0 * distance * np.tan(radian_width / 2.0) * au_pc
+
+    npix = int(hdu[0].header["NAXIS1"])
+
+    # Calculate the spatial extent (au)
+    x_max = 1.0 * (image_size / 2.0)
+
+    return npix, x_max
+
+
+def make_grids(
+    hdu: Optional[list] = None,
+    r_min: Optional[float] = 0.0,
+    r_max: Optional[float] = 300.0,
+    num_r: Optional[int] = None,
+    distance: float = 200.0,
+):
+    """Makes x, y, r, and phi grids for an hdu/r range at a given distance"""
+
+    # in order to calculate the moment to match an hdu's spatial extent
+    if hdu is not None:
+        num_r, r_max = get_image_physical_size(
+            hdu,
+            distance=distance,
+        )
+        r_min = -r_max
+
+    if num_r is None:
+        num_r = int(r_max - r_min)
+
+    # make range x range
+    xs = np.linspace(r_min, r_max, num_r)
+
+    # turn into x and y grids
+    gx = np.tile(xs, (num_r, 1))
+    gy = np.tile(xs, (num_r, 1)).T
+
+    # turn into r, phi grid
+    gr = np.sqrt(gx**2 + gy**2)
+    gphi = np.arctan2(gy, gx)
+
+    return gr, gphi, gx, gy
 
 
 def make_peak_vel_map(
@@ -99,3 +155,61 @@ def calc_azimuthal_average(
         az_avg_map[r_grid == r] = avg
 
     return az_averages, az_avg_map
+
+
+def mask_keplerian_velocity(
+    fits_path: str,
+    vel_tol: float = 0.05,
+    vel_max: Optional[float] = None,
+    vel_min: Optional[float] = None,
+    sub_cont: bool = True,
+    distance: float = 200.0,
+    r_min: Optional[float] = None,
+    r_max: Optional[float] = None,
+    num_r: Optional[int] = None,
+    M_star: float = 1.0,
+    inc: float = 20.0,
+) -> tuple:
+    """
+    This function creates two new data cubes: one with the velocities within some tolerance of the keplerian
+    velocity at that location and another that is outside of that range (i.e, the keplerian data and non-keplerian data)
+    """
+
+    # get cube
+    data, velax = bm.load_cube(fits_path)
+
+    # subtract continuum
+    if sub_cont:
+        data[:] -= 0.5 * (data[0] + data[-1])
+
+    # use header to make position grid
+    hdu = fits.open(fits_path)
+
+    # get the keplerian moment
+    kep_moment1 = calculate_keplerian_moment1(
+        hdu=hdu,
+        r_min=r_min,
+        r_max=r_max,
+        num_r=num_r,
+        M_star=M_star,
+        distance=distance,
+        inc=inc,
+    )
+
+    # mask the data that's inside the keplerian tolerance
+    keplerian_mask = np.abs(velax[:, np.newaxis, np.newaxis] - kep_moment1) < vel_tol
+    # get the anti-mask
+    non_keplerian_mask = ~keplerian_mask
+
+    # trim velocity axis
+    if vel_min is not None and vel_max is not None:
+        okay_indices = np.where((velax >= vel_min) & (velax <= vel_max))
+        data = data[okay_indices, :, :]
+        velax = velax[okay_indices]
+
+    # eliminate all non-keplerian data
+    kep_data = np.where(keplerian_mask, data, 0)
+    # and the same for keplerian data
+    non_kep_data = np.where(non_keplerian_mask, data, 0)
+
+    return kep_data, non_kep_data, velax
