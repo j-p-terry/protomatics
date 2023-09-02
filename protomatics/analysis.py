@@ -5,6 +5,7 @@ import numpy as np
 from astropy.io import fits
 
 from .constants import au_pc
+from .helpers import cylindrical_to_cartesian
 from .plotting import plot_wcs_data
 
 ##############################################################
@@ -207,3 +208,106 @@ def mask_keplerian_velocity(
     non_kep_data = np.where(non_keplerian_mask, data, 0)
 
     return kep_data, non_kep_data, velax
+
+
+def get_wiggle_amplitude(
+    rs: list,
+    phis: list,
+    ref_rs: Optional[list] = None,
+    ref_phis: Optional[list] = None,
+    rmin: Optional[float] = None,
+    rmax: Optional[float] = None,
+    wiggle_rmax: Optional[float] = None,
+    vel_is_zero: bool = True,
+    return_diffs: bool = False,
+    use_std_as_amp: bool = False,
+):
+    """
+    This gets the amplitude of a curve relative to some reference curve.
+    Can be done via integration or simply the standard deviation.
+    If vel_is_zero then it simple takes the refence curve to be +- pi/2
+    """
+
+    ref_length = 0.0
+    diff_length = 0.0
+    diffs = []
+    used_rs = []
+
+    # signed distances
+    dists = rs.copy() * np.sign(phis.copy())
+
+    # make systemic channel minor axis
+    if vel_is_zero and ref_rs is None:
+        ref_phis = np.sign(dists.copy()) * np.pi / 2.0
+        ref_dists = rs.copy() * np.sign(ref_phis.copy())
+        ref_rs = rs.copy()
+
+    if wiggle_rmax is None:
+        wiggle_rmax = np.max(ref_rs)
+    if rmin is None:
+        rmin = 1.0
+    if rmax is None:
+        rmax = np.max(ref_rs)
+
+    # can just use the standard deviation of wiggle
+    if use_std_as_amp:
+        # select right radial range
+        okay = np.where((np.abs(ref_rs) < wiggle_rmax) & (np.abs(ref_rs) > rmin))
+        used_phis = phis[okay]
+        used_rs = rs[okay]
+        used_ref_phis = ref_phis[okay]
+        # try to subtract reference curve if possible
+        amp = (
+            np.std(used_phis)
+            if len(used_phis) != len(used_ref_phis)
+            else np.std(np.abs(used_phis - used_ref_phis))
+        )
+        return amp, used_rs, used_phis - used_ref_phis if return_diffs else amp
+
+    # otherwise, integrate along curve
+    for i, ref_r in enumerate(ref_rs):
+        # make sure it's in the right radius
+        if (
+            abs(ref_r) > wiggle_rmax
+            or abs(ref_r) < rmin
+            or abs(ref_r) > np.max(np.abs(rs))
+            or abs(ref_r) < np.min(np.abs(rs))
+        ):
+            continue
+
+        # there's no next r after the last one
+        if i == len(ref_rs) - 1:
+            continue
+
+        ref_phi = ref_phis[i]
+        ref_dist = ref_dists[i]
+
+        # find closest radius
+        index = np.argmin(np.abs(dists - ref_dist))
+        curve_phi = phis[index]
+
+        # convert to cartesian
+        ref_x, ref_y = cylindrical_to_cartesian(ref_r, ref_phi)
+        next_ref_x, next_ref_y = cylindrical_to_cartesian(ref_rs[i + 1], ref_phis[i + 1])
+
+        # get difference
+        this_diff = abs(curve_phi - ref_phi) ** 2.0
+        diffs.append(this_diff)
+        used_rs.append(np.sign(ref_phi) * ref_r)
+        # get differential
+        ds = np.sqrt((ref_x - next_ref_x) ** 2 + (ref_y - next_ref_y) ** 2)
+
+        ref_length += ds
+        diff_length += this_diff * ds
+
+    coeff = 1
+
+    if return_diffs:
+        if ref_length == 0:
+            return 0, used_rs, diffs
+        return coeff * np.sqrt(diff_length / ref_length), used_rs, diffs
+
+    if ref_length == 0:
+        return 0
+
+    return coeff * np.sqrt(diff_length / ref_length)
