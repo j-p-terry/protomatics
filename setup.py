@@ -14,6 +14,7 @@ setuptools.setup(
     author="Jason Terry",
     author_email="jpterry@uga.edu",
     packages=["protomatics"],
+    package_data={"protomatics": ["data/*.fits"]},
     url="https://github.com/j-p-terry/protomatics",
     license="LICENSE.md",
     description=("Kinematic analysis of protoplanetary disk data."),
