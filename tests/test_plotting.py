@@ -42,9 +42,9 @@ def test_wcs_plot(fits_name):
     plot_wcs_data(hdu, subtract_channels=[0, -1], show=False)
 
     if "cube" in fits_name:
-        overlay_hdu = fits.open("./protomatics/data/test_2d.fits")
+        overlay_hdu = fits.open("./tests/data/test_2d.fits")
     else:
-        overlay_hdu = fits.open("./protomatics/data/test_3d_cube.fits")
+        overlay_hdu = fits.open("./tests/data/test_3d_cube.fits")
 
     # with additional options
     print("Plotting with overlay")
