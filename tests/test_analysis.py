@@ -23,7 +23,7 @@ def test_make_grid(fits_name):
     print(f"Testing grid making with {fits_name}")
 
     # plot with preloaded
-    path = f"./protomatics/data/{fits_name}"
+    path = f"./tests/data/{fits_name}"
 
     hdu = fits.open(path)
 
@@ -45,7 +45,7 @@ def test_azimuthal_average(fits_name):
     print(f"Testing azimuthal average with {fits_name}")
 
     # plot with preloaded
-    path = f"./protomatics/data/{fits_name}"
+    path = f"./tests/data/{fits_name}"
 
     hdu = fits.open(path)
 
@@ -71,7 +71,7 @@ def test_peak_vel_map(fits_name):
     print(f"Testing peak velocity map with {fits_name}")
 
     # plot with preloaded
-    path = f"./protomatics/data/{fits_name}"
+    path = f"./tests/data/{fits_name}"
 
     _ = make_peak_vel_map(path)
 
@@ -85,7 +85,7 @@ def test_wiggle_amplitude(fits_name):
     print(f"Testing wiggle ampltidue with {fits_name}")
 
     # plot with preloaded
-    path = f"./protomatics/data/{fits_name}"
+    path = f"./tests/data/{fits_name}"
 
     print("Calculating moments")
     calc_moments, _ = make_moments(path, which_moments=[1])

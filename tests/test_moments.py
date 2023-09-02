@@ -22,7 +22,7 @@ def test_moment_and_wiggle(fits_name):
     print(f"Testing moment calculations and wiggle extraction with {fits_name}")
 
     # plot with preloaded
-    path = f"./protomatics/data/{fits_name}"
+    path = f"./tests/data/{fits_name}"
 
     print("Calculating moments")
     calc_moments, _ = make_moments(path)
@@ -60,7 +60,7 @@ def test_masked_moments(fits_name):
     print(f"Testing masked moments with {fits_name}")
 
     # plot with preloaded
-    path = f"./protomatics/data/{fits_name}"
+    path = f"./tests/data/{fits_name}"
 
     _ = make_masked_moments(path)
 

@@ -31,7 +31,7 @@ def test_wcs_plot(fits_name):
 
     # plot with preloaded
     print("Loading")
-    hdu = fits.open(f"./protomatics/data/{fits_name}")
+    hdu = fits.open(f"./tests/data/{fits_name}")
 
     # basic plot
     print("Default plot")
@@ -65,7 +65,7 @@ def test_wiggle_plots(fits_name):
 
     print(f"Testing wiggle plots with {fits_name}")
     # plot with preloaded
-    path = f"./protomatics/data/{fits_name}"
+    path = f"./tests/data/{fits_name}"
 
     print("Calculating moments")
     calc_moments, _ = make_moments(path)
