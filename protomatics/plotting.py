@@ -181,10 +181,6 @@ def plot_wcs_data(
         if subtract_data is not None:
             plot_data -= subtract_data
 
-    # get minimum and maximum values
-    vmin = vmin if vmin is not None else np.min(plot_data)
-    vmax = vmax if vmax is not None else np.max(plot_data)
-
     # make a log normalizer
     norm = LogNorm(vmin, vmax) if log else None
 
