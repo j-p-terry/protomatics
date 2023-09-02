@@ -1,0 +1,4 @@
+# .gitattributes
+
+# Treat .fits files as binary
+*.fits binary
