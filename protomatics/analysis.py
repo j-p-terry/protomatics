@@ -203,12 +203,6 @@ def mask_keplerian_velocity(
     # get the anti-mask
     non_keplerian_mask = ~keplerian_mask
 
-    # trim velocity axis
-    if vel_min is not None and vel_max is not None:
-        okay_indices = np.where((velax >= vel_min) & (velax <= vel_max))
-        data = data[okay_indices, :, :]
-        velax = velax[okay_indices]
-
     # eliminate all non-keplerian data
     kep_data = np.where(keplerian_mask, data, 0)
     # and the same for keplerian data
