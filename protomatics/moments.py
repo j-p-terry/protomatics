@@ -187,8 +187,6 @@ def make_masked_moments(
     kep_data, non_kep_data, velax = mask_keplerian_velocity(
         fits_path,
         vel_tol=vel_tol,
-        vel_min=vel_min,
-        vel_max=vel_max,
         distance=distance,
         inc=inc,
         M_star=M_star,
@@ -210,6 +208,8 @@ def make_masked_moments(
         masked_data=kep_data,
         velax=velax,
         rms=kep_rms,
+        vel_min=vel_min,
+        vel_max=vel_max,
         outname="keplerian",
     )
     non_kep_moments, non_kep_uncertainties = make_moments(
@@ -219,6 +219,8 @@ def make_masked_moments(
         masked_data=non_kep_data,
         velax=velax,
         rms=non_kep_rms,
+        vel_min=vel_min,
+        vel_max=vel_max,
         outname="non_keplerian",
     )
 
