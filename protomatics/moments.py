@@ -166,7 +166,7 @@ def make_moments(
 def make_masked_moments(
     fits_path: str,
     which_moments: tuple = (0, 1, 2),
-    vel_tol: float = 1.0,
+    vel_tol: float = 0.5,
     vel_max: Optional[float] = None,
     vel_min: Optional[float] = None,
     sub_cont: bool = True,
