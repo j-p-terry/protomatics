@@ -274,7 +274,7 @@ def plot_moments(
             subtract_data=kep_moment if sub_kep_moment and moment == 1 else None,
             vmin=vel_min,
             vmax=vel_max,
-            plot_cmap="RdBu_r",
+            plot_cmap="RdBu_r" if moment % 2 == 1 else "magma",
             plot_units=moment_units[moment],
             show=show,
         )
