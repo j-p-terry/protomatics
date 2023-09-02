@@ -31,7 +31,7 @@ def test_wcs_plot(fits_name):
 
     # plot with preloaded
     print("Loading")
-    hdu = fits.open(f"./tests/data/{fits_name}")
+    hdu = fits.open(f"./protomatics/data/{fits_name}")
 
     # basic plot
     print("Default plot")
@@ -42,9 +42,9 @@ def test_wcs_plot(fits_name):
     plot_wcs_data(hdu, subtract_channels=[0, -1], show=False)
 
     if "cube" in fits_name:
-        overlay_hdu = fits.open("./tests/data/test_2d.fits")
+        overlay_hdu = fits.open("./protomatics/data/test_2d.fits")
     else:
-        overlay_hdu = fits.open("./tests/data/test_3d_cube.fits")
+        overlay_hdu = fits.open("./protomatics/data/test_3d_cube.fits")
 
     # with additional options
     print("Plotting with overlay")
@@ -65,7 +65,7 @@ def test_wiggle_plots(fits_name):
 
     print(f"Testing wiggle plots with {fits_name}")
     # plot with preloaded
-    path = f"./tests/data/{fits_name}"
+    path = f"./protomatics/data/{fits_name}"
 
     print("Calculating moments")
     calc_moments, _ = make_moments(path)
