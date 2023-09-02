@@ -96,13 +96,13 @@ def test_wiggle_amplitude(fits_name):
     print("Getting ampltidue without reference curve")
     _ = get_wiggle_amplitude(rs, phis, vel_is_zero=True)
 
-    print("Getting standard without reference curve")
+    print("Getting standard deviation without reference curve")
     _ = get_wiggle_amplitude(rs, phis, vel_is_zero=True, use_std_as_amp=True)
 
     print("Getting ampltidue with identical reference curve")
     _ = get_wiggle_amplitude(rs, phis, ref_rs=rs, ref_phis=phis, vel_is_zero=False)
 
-    print("Getting standard with identical reference curve")
+    print("Getting standard deviation with identical reference curve")
     _ = get_wiggle_amplitude(
         rs, phis, ref_rs=rs, ref_phis=phis, vel_is_zero=False, use_std_as_amp=True
     )
@@ -114,7 +114,7 @@ def test_wiggle_amplitude(fits_name):
     print("Getting ampltidue with keplerian reference curve")
     _ = get_wiggle_amplitude(rs, phis, ref_rs=kep_rs, ref_phis=kep_phis, vel_is_zero=False)
 
-    print("Getting standard with keplerian reference curve")
+    print("Getting standard deviation with keplerian reference curve")
     _ = get_wiggle_amplitude(
         rs, phis, ref_rs=kep_rs, ref_phis=kep_phis, vel_is_zero=False, use_std_as_amp=True
     )

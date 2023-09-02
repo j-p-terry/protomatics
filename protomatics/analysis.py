@@ -241,6 +241,11 @@ def get_wiggle_amplitude(
         ref_phis = np.sign(dists.copy()) * np.pi / 2.0
         ref_dists = rs.copy() * np.sign(ref_phis.copy())
         ref_rs = rs.copy()
+    elif ref_rs is None:
+        print("No reference curve! Amplitude is zero!")
+        return 0.0, [], 0.0 if return_diffs else 0.0
+
+    ref_dists = ref_rs.copy() * np.sign(ref_phis.copy())
 
     if wiggle_rmax is None:
         wiggle_rmax = np.max(ref_rs)
