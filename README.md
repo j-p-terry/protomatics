@@ -47,10 +47,10 @@ where moments and uncertainties are dictionaries with keys corresponding to the 
 The moments can be plotted with
 
 ```python
-pm.plot_moments()
+pm.plot_moments(moment_dictionary, fits_path=path_to_fits)
 ```
 
-This has no required arguments. Previously calculated moments (calc_moments) can be passed through or fits_path can be used to direct the calculation of moments for a given fits file. Keplerian moments are calculated if sub_kep_moment = True. Keplerian moments are calculated using M_star, inc, and distance. They are matched in position space using the fits provided in fits_path.
+This has no required arguments. Previously calculated moments (calc_moments) can be passed through or fits_path can be used to direct the calculation of moments for a given fits file. One of these two things must be put into the function or else there is nothing to plot. The precalcualted moments get priority if both are used. Keplerian moments are calculated if sub_kep_moment = True. Keplerian moments are calculated using M_star, inc, and distance. They are matched in position space using the fits provided in fits_path.
 vmaxes and vmins are dictionaries with the maximum and minimum values to plot, respectively.
 
 Moments can also be masked into their Keplerian and non-Keplerian components. Masks are calculated by determining if a given region is within some tolerance (vel_tol) of the Keplerian velocity at that location.
