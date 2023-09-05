@@ -35,9 +35,18 @@ def test_moment_and_wiggle(fits_name):
     print("Plotting moments with keplerian subtraction")
     plot_moments(calc_moments=calc_moments, fits_path=path, show=False, sub_kep_moment=True)
 
-    # test with no loading
+    # test with loading
     print("Plotting moments with no data loaded")
     plot_moments(fits_path=path, show=False)
+
+    # test with no loading
+    print("Plotting moments with no data loaded")
+    plot_moments(
+        fits_path=path,
+        show=False,
+        vmins={0: 0.0, 1: -3.0},
+        vmaxes={0: 1.0, 1: 3.0},
+    )
 
     # get pv curve
     print("Getting P-V wiggle")
