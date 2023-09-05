@@ -65,7 +65,7 @@ pm.plot_wcs_data(
 )
 ```
 
-where $\mathrm{\texttt{**kwargs}}$ includes options to override default plot values. $\mathrm{\texttt{label-font}}$ sets the axis label font size. $\mathrm{\texttt{tick-font}}$ sets the tick label size. $\mathrm{\texttt{legend-font}}$ sets the legend font size. $\mathrm{\texttt{figsize}}$ sets the figure size as a tuple (H, W). $\mathrm{\texttt{overlay-cmap}}$ sets the default colormap for the overlay contours. $\mathrm{\texttt{overlay-color-list}}$ explicitly passes the colors for the overlay contours.
+where $\mathrm{\texttt{**kwargs}}$ includes options to override default plot values. \texttt{label-font} sets the axis label font size. $\mathrm{\texttt{tick-font}}$ sets the tick label size. $\mathrm{\texttt{legend-font}}$ sets the legend font size. $\mathrm{\texttt{figsize}}$ sets the figure size as a tuple (H, W). $\mathrm{\texttt{overlay-cmap}}$ sets the default colormap for the overlay contours. $\mathrm{\texttt{overlay-color-list}}$ explicitly passes the colors for the overlay contours.
 
 Polar plots can be made with
 
