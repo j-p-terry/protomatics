@@ -64,7 +64,9 @@ Wiggles can be extracted in either position-position space (where moment-1 = 0) 
 
 ```python
 wiggle_rs, wiggle_y = pm.extrac_wiggle(
-    moment1_map, in_pv_space=whether_to_get_positon_velocity_wiggle
+    moment1_map,
+    in_pv_space=whether_to_get_positon_velocity_wiggle,
+    rotation_angle=minor_axis_offset_in_degrees,
 )
 ```
 wiggle_y is in radians for (i.e. azimuthal angle of wiggle) position-positon curve and in km/s for position-velocity curve.
