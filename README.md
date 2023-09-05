@@ -23,7 +23,7 @@ import protomatics as pm
 
 ### Basic Examples
 
-(Note: all $\mathrm{\texttt{-}}$ given in the text should be considered underscores.)
+(Note: all dashes given in the text should be considered underscores.)
 
 #### Plotting
 
