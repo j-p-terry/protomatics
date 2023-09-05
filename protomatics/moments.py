@@ -244,6 +244,7 @@ def plot_moments(
     show: bool = True,
     vmaxes: Optional[dict] = None,
     vmins: Optional[dict] = None,
+    **kwargs,
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
 
@@ -287,6 +288,7 @@ def plot_moments(
             plot_cmap="RdBu_r" if moment % 2 == 1 else "magma",
             plot_units=moment_units[moment],
             show=show,
+            **kwargs,
         )
 
 
