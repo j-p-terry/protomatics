@@ -42,7 +42,7 @@ moments, uncertainties = pm.make_moments(
 )
 ```
 
-where $\texttt{moments}$ and $\texttt{uncertainties}$ are dictionaries with keys corresponding to the moment order. All arguments except for $\texttt{path\_to\_fits}$ are optional. If only $\texttt{path\_to\_fits}$ is provided, the moments will be loaded and calculated without any additional options.
+where $\mathrm{\texttt{moments}$ and $\mathrm{\texttt{uncertainties}$ are dictionaries with keys corresponding to the moment order. All arguments except for $\mathrm{\texttt{path_to_fits}$ are optional. If only $\mathrm{\texttt{path_to_fits}$ is provided, the moments will be loaded and calculated without any additional options.
 
 The moments can be plotted with
 
@@ -50,10 +50,10 @@ The moments can be plotted with
 pm.plot_moments(moment_dictionary, fits_path=path_to_fits)
 ```
 
-This has no required arguments. Previously calculated moments ($\texttt{calc\_moments}$) can be passed through or $\texttt{fits\_path}$ can be used to direct the calculation of moments for a given fits file. One of these two things must be put into the function or else there is nothing to plot. The precalcualted moments get priority if both are used. Keplerian moments are calculated if $\texttt{sub\_kep\_moment}$ = True. Keplerian moments are calculated using $\texttt{M\_star}$, $\texttt{inc}$, and $\texttt{distance}$. They are matched in position space using the fits provided in $\texttt{fits\_path}$.
-$\texttt{vmaxes}$ and $\texttt{vmins}$ are dictionaries with the maximum and minimum values to plot, respectively.
+This has no required arguments. Previously calculated moments ($\mathrm{\texttt{calc_moments}$) can be passed through or $\mathrm{\texttt{fits_path}$ can be used to direct the calculation of moments for a given fits file. One of these two things must be put into the function or else there is nothing to plot. The precalcualted moments get priority if both are used. Keplerian moments are calculated if $\mathrm{\texttt{sub_kep_moment}$ = True. Keplerian moments are calculated using $\mathrm{\texttt{M_star}$, $\mathrm{\texttt{inc}$, and $\mathrm{\texttt{distance}$. They are matched in position space using the fits provided in $\mathrm{\texttt{fits_path}$.
+$\mathrm{\texttt{vmaxes}$ and $\mathrm{\texttt{vmins}$ are dictionaries with the maximum and minimum values to plot, respectively.
 
-Moments can also be masked into their Keplerian and non-Keplerian components. Masks are calculated by determining if a given region is within some tolerance ($\texttt{vel\_tol}$) of the Keplerian velocity at that location.
+Moments can also be masked into their Keplerian and non-Keplerian components. Masks are calculated by determining if a given region is within some tolerance ($\mathrm{\texttt{vel_tol}$) of the Keplerian velocity at that location.
 
 ```python
 pm.make_masked_moments(path_to_fits)
@@ -69,7 +69,7 @@ wiggle_rs, wiggle_y = pm.extrac_wiggle(
     rotation_angle=minor_axis_offset_in_degrees,
 )
 ```
-$\texttt{wiggle\_y}$ is in radians for (i.e. azimuthal angle of wiggle) position-positon curve and in km/s for position-velocity curve.
+$\mathrm{\texttt{wiggle_y}$ is in radians for (i.e. azimuthal angle of wiggle) position-positon curve and in km/s for position-velocity curve.
 
 The amplitude of the wiggle can be calculated using either integration along the curve or by simple standard deviation.
 
@@ -83,7 +83,7 @@ amplitude = pm.get_wiggle_amplitude(
     use_std_as_amp=whether_to_get_amplitude_as_standard_deviation,
 )
 ```
-Only $\texttt{rs}$ and $\texttt{phis}$ are required. If $\texttt{vel\_is\_zero}$ = True, the $\texttt{reference\_curve}$ is simply taken as the minor axis (i.e, $\phi = \pm \pi / 2$).
+Only $\mathrm{\texttt{rs}$ and $\mathrm{\texttt{phis}$ are required. If $\mathrm{\texttt{vel_is_zero}$ = True, the $\mathrm{\texttt{reference_curve}$ is simply taken as the minor axis (i.e, $\phi = \pm \pi / 2$).
 
 One can also calculate the azimuthal average of an array of data using
 ```python
@@ -92,8 +92,8 @@ average_by_r, average_map = pm.calc_azimuthal_average(
     r_grid=grid_of_radius_at_each_point_in_physical_space,
 )
 ```
-$\texttt{data}$ is mandatory, but the grid is not. If no grid is provided, the radii will be calculated in terms of pixels instead of the physical space defined by $\texttt{r\_grid}$.
+$\mathrm{\texttt{data}$ is mandatory, but the grid is not. If no grid is provided, the radii will be calculated in terms of pixels instead of the physical space defined by $\mathrm{\texttt{r_grid}$.
 
-This method is conveneint for calculating Doppler flip plots if $\texttt{data}$ = moment1_map.
+This method is conveneint for calculating Doppler flip plots if $\mathrm{\texttt{data}$ = moment1_map.
 
 Other functionality is quickly being added. Please report any bugs. More substantial documentation is coming soon.
