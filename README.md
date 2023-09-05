@@ -23,6 +23,8 @@ import protomatics as pm
 
 ### Basic Examples
 
+(Note: all $\mathrm{\textttt{-}}$ given in the text should be considered underscores.)
+
 #### Plotting
 
 Several different types of plots can be made. One generally useful function plots data in WCS. Among other functionality, contours of other data can be overlaid, other data can be subtracted, and beams can be plotted.
