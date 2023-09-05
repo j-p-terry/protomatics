@@ -11,7 +11,7 @@ ProtoMatics is a python package to analyze and visualize protoplanetary disk dat
 
 It can be installed via
 
-```
+```bash
 pip install protomatics
 ```
 
