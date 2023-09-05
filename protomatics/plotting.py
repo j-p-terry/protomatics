@@ -181,6 +181,7 @@ def plot_wcs_data(
         )
 
     if subtract_data is not None:
+        plot_data = plot_data.copy()
         plot_data -= subtract_data
 
     # make a log normalizer
