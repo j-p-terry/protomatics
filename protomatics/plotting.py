@@ -207,11 +207,15 @@ def plot_wcs_data(
         overlay_hdu[0].header["CRVAL2"] = 0.0
         overlay_wcs = WCS(overlay_hdu[0].header, naxis=2)
 
-        overlay_data = overlay_hdu[0].data.copy()
+        overlay_data = overlay_hdu[0].data.copy().squeeze()
 
         # make sure we have a channel axis to iterate over (e.g. for continuum)
         if len(overlay_data.shape) == 2:
             overlay_data = overlay_data[np.newaxis, :, :]
+            overlay_channels = [0]
+
+        # just make sure that there are actually channels (e.g. for continuum)
+        if overlay_channels is None:
             overlay_channels = [0]
 
         # ensure there are enough colors for all overlays
