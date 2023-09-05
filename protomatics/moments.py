@@ -242,6 +242,8 @@ def plot_moments(
     inc: float = 20.0,
     distance: float = 200.0,
     show: bool = True,
+    vmaxes: Optional[dict] = None,
+    vmins: Optional[dict] = None,
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
 
@@ -267,6 +269,12 @@ def plot_moments(
                 0.0, 0.0, 0.0, M_star=M_star, inc=inc, distance=distance, hdu=hdu
             )
 
+        vmax = vmaxes[moment] if moment in vmaxes else None
+        vmin = vmins[moment] if moment in vmaxes else None
+
+        vmax = vel_max if moment == 1 and vel_max is not None else vmax
+        vmin = vel_min if moment == 1 and vel_min is not None else vmin
+
         plot_wcs_data(
             hdu,
             plot_data=calc_moments[moment],
@@ -274,8 +282,8 @@ def plot_moments(
             save=save,
             save_name=save_name,
             subtract_data=kep_moment if sub_kep_moment and moment == 1 else None,
-            vmin=vel_min if moment == 1 else None,
-            vmax=vel_max if moment == 1 else None,
+            vmin=vmax,
+            vmax=vmin,
             plot_cmap="RdBu_r" if moment % 2 == 1 else "magma",
             plot_units=moment_units[moment],
             show=show,
