@@ -268,7 +268,9 @@ def get_wiggle_amplitude(
             else np.std(np.abs(used_phis - used_ref_phis))
         )
         ### TODO: Check why this always returns all
-        return amp, used_rs, used_phis - used_ref_phis if return_diffs else amp
+        if return_diffs:
+            return amp, used_rs, used_phis - used_ref_phis
+        return amp
 
     # otherwise, integrate along curve
     for i, ref_r in enumerate(ref_rs):
