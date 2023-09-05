@@ -77,6 +77,8 @@ def prepare_plot_data(
             plot_data[channel, :, :] -= plot_data[subtract_channels[i], :, :] / len(
                 subtract_channels
             )
+        # make sure nothing is negative
+        plot_data[plot_data < 0.0] = 0.0
 
     # choose a channel if it's a cube
     if len(plot_data.shape) == 3:
