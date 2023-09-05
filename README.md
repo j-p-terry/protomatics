@@ -42,7 +42,7 @@ moments, uncertainties = pm.make_moments(
 )
 ```
 
-where moments and uncertainties are dictionaries with keys corresponding to the moment order. All arguments except for path_to_fits are optional. If only path_to_fits is provided, the moments will be loaded and calculated without any additional options.
+where $\texttt{moments}$ and uncertainties are dictionaries with keys corresponding to the moment order. All arguments except for path_to_fits are optional. If only path_to_fits is provided, the moments will be loaded and calculated without any additional options.
 
 The moments can be plotted with
 
