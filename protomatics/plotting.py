@@ -178,8 +178,8 @@ def plot_wcs_data(
             subtract_channels=subtract_channels,
         )
 
-        if subtract_data is not None:
-            plot_data -= subtract_data
+    if subtract_data is not None:
+        plot_data -= subtract_data
 
     # make a log normalizer
     norm = LogNorm(vmin, vmax) if log else None
