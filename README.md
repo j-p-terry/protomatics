@@ -69,7 +69,7 @@ wiggle_rs, wiggle_y = pm.extrac_wiggle(
     rotation_angle=minor_axis_offset_in_degrees,
 )
 ```
-$\mathrm{\texttt{wiggle_y}}$ is in radians for (i.e. azimuthal angle of wiggle) position-positon curve and in km/s for position-velocity curve.
+$\mathrm{\texttt{wiggle-y}}$ is in radians for (i.e. azimuthal angle of wiggle) position-positon curve and in km/s for position-velocity curve.
 
 The amplitude of the wiggle can be calculated using either integration along the curve or by simple standard deviation.
 
