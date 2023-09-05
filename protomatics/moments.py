@@ -270,8 +270,8 @@ def plot_moments(
                 0.0, 0.0, 0.0, M_star=M_star, inc=inc, distance=distance, hdu=hdu
             )
 
-        vmax = vmaxes[moment] if moment in vmaxes else None
-        vmin = vmins[moment] if moment in vmaxes else None
+        vmax = (None if moment not in vmaxes else vmaxes[moment]) if vmaxes is not None else None
+        vmin = (None if moment not in vmins else vmins[moment]) if vmins is not None else None
 
         vmax = vel_max if moment == 1 and vel_max is not None else vmax
         vmin = vel_min if moment == 1 and vel_min is not None else vmin
