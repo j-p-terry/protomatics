@@ -23,7 +23,63 @@ import protomatics as pm
 
 ### Basic Examples
 
-#### Moment calculation
+#### Plotting
+
+Several different types of plots can be made. One generally useful function plots data in WCS. Among other functionality, contours of other data can be overlaid, other data can be subtracted, and beams can be plotted.
+
+```python
+pm.plot_wcs_data(
+    hdu,
+    fits_path,
+    plot_data,
+    channel=0.0,
+    line_index=0.0,
+    contour_value=None,
+    save=False,
+    save_name="./plot.pdf",
+    trim=(None, None),
+    vmin=None,
+    vmax=None,
+    overlay_hdu=None,
+    overlay_pmin=0.0,
+    overlay_channels=None,
+    subtract_data=None,
+    subtract_channels=None,
+    subtract_overlay_channels=None,
+    num_ticks=5,
+    log=False,
+    scale_data=1.0,
+    overlay_data_scale=1.0,
+    plot_cmap="magma",
+    plot_units="",
+    beam_position=None,
+    overlay_beam_position=None,
+    beam_color="white",
+    overlay_beam_color="limegreen",
+    plot_beam=False,
+    plot_overlay_beam=False,
+    show=True,
+    **kwargs,
+)
+```
+
+where $\mathrm{\texttt{**kwargs}}$ includes options to override default plot values. $\mathrm{\texttt{label-font}}$ sets the axis label font size. $\mathrm{\texttt{tick-font}}$ sets the tick label size. $\mathrm{\texttt{legend-font}}$ sets the legend font size. $\mathrm{\texttt{figsize}}$ sets the figure size as a tuple (H, W). $\mathrm{\texttt{overlay-cmap}}$ sets the default colormap for the overlay contours. $\mathrm{\texttt{overlay-color-list}}$ explicitly passes the colors for the overlay contours.
+
+Polar plots can be made with
+
+```python
+pm.plot_polar_and_get_contour(data, contour_value)
+```
+which creates a heatmap in polar coordinates and extracts a contour at the given value (optional).
+
+```python
+pm.polar_plot(rs, phis, scatter=whether_to_use_scatter_or_line)
+```
+
+will make a scatter or line plot in polar coordinates depending on the value of $\mathrm{\texttt{scatter}}$.
+
+
+#### Moment calculation and analysis
 
 ProtoMatics can calculate moment-0, 1, 2, 8, and 9 maps using [bettermoments](https://github.com/richteague/bettermoments). To caluculate moments, use
 
