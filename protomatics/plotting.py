@@ -205,6 +205,13 @@ def plot_wcs_data(
         overlay_hdu[0].header["CRVAL2"] = 0.0
         overlay_wcs = WCS(overlay_hdu[0].header, naxis=2)
 
+        overlay_data = overlay_hdu[0].data.copy()
+
+        # make sure we have a channel axis to iterate over (e.g. for continuum)
+        if len(overlay_data.shape) == 2:
+            overlay_data = overlay_data[np.newaxis, :, :]
+            overlay_channels = [0]
+
         # ensure there are enough colors for all overlays
         if len(overlay_channels) > len(overlay_colors):
             overlay_cmap = overlay_cmap
@@ -212,13 +219,6 @@ def plot_wcs_data(
             overlay_cmap = ListedColormap(overlay_cmap[: len(overlay_channels)])
         else:
             overlay_cmap = overlay_color_list[:]
-
-        overlay_data = overlay_hdu[0].data.copy()
-
-        # make sure we have a channel axis to iterate over (e.g. for continuum)
-        if len(overlay_data.shape) == 2:
-            overlay_data = overlay_data[np.newaxis, :, :]
-            overlay_channels = [0]
 
         # get each channel to overlay
         for i, overlay_channel in enumerate(overlay_channels):
