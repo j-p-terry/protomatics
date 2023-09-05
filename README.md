@@ -50,7 +50,7 @@ The moments can be plotted with
 pm.plot_moments(moment_dictionary, fits_path=path_to_fits)
 ```
 
-This has no required arguments. Previously calculated moments ($\mathrm{\texttt{calc_moments}}$) can be passed through or $\mathrm{\texttt{fits_path}}$ can be used to direct the calculation of moments for a given fits file. One of these two things must be put into the function or else there is nothing to plot. The precalcualted moments get priority if both are used. Keplerian moments are calculated if $\mathrm{\texttt{sub_kep_moment}}$ = True. Keplerian moments are calculated using $\mathrm{\texttt{M_star}}$, $\mathrm{\texttt{inc}}$, and $\mathrm{\texttt{distance}}$. They are matched in position space using the fits provided in $\mathrm{\texttt{fits_path}}$.
+This has no required arguments. Previously calculated moments ($\mathrm{\texttt{calc-moments}}$) can be passed through or $\mathrm{\texttt{fits\textunderscore path}}$ can be used to direct the calculation of moments for a given fits file. One of these two things must be put into the function or else there is nothing to plot. The precalcualted moments get priority if both are used. Keplerian moments are calculated if $\mathrm{\texttt{sub-kep-moment}}$ = True. Keplerian moments are calculated using $\mathrm{\texttt{M_star}}$, $\mathrm{\texttt{inc}}$, and $\mathrm{\texttt{distance}}$. They are matched in position space using the fits provided in $\mathrm{\texttt{fits_path}}$.
 $\mathrm{\texttt{vmaxes}}$ and $\mathrm{\texttt{vmins}}$ are dictionaries with the maximum and minimum values to plot, respectively.
 
 Moments can also be masked into their Keplerian and non-Keplerian components. Masks are calculated by determining if a given region is within some tolerance ($\mathrm{\texttt{vel_tol}}$) of the Keplerian velocity at that location.
@@ -83,7 +83,7 @@ amplitude = pm.get_wiggle_amplitude(
     use_std_as_amp=whether_to_get_amplitude_as_standard_deviation,
 )
 ```
-Only $\mathrm{\texttt{rs}}$ and $\mathrm{\texttt{phis}}$ are required. If $\mathrm{\texttt{vel_is_zero}}$ = True, the $\mathrm{\texttt{reference_curve}}$ is simply taken as the minor axis (i.e, $\phi = \pm \pi / 2$).
+Only $\mathrm{\texttt{rs}}$ and $\mathrm{\texttt{phis}}$ are required. If $\mathrm{\texttt{vel-is-zero}}$ = True, the $\mathrm{\texttt{reference-curve}}$ is simply taken as the minor axis (i.e, $\phi = \pm \pi / 2$).
 
 One can also calculate the azimuthal average of an array of data using
 ```python
@@ -92,7 +92,7 @@ average_by_r, average_map = pm.calc_azimuthal_average(
     r_grid=grid_of_radius_at_each_point_in_physical_space,
 )
 ```
-$\mathrm{\texttt{data}}$ is mandatory, but the grid is not. If no grid is provided, the radii will be calculated in terms of pixels instead of the physical space defined by $\mathrm{\texttt{r_grid}}$.
+$\mathrm{\texttt{data}}$ is mandatory, but the grid is not. If no grid is provided, the radii will be calculated in terms of pixels instead of the physical space defined by $\mathrm{\texttt{r-grid}}$.
 
 This method is conveneint for calculating Doppler flip plots if $\mathrm{\texttt{data}}$ = moment1_map.
 
