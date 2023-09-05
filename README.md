@@ -81,7 +81,7 @@ amplitude = pm.get_wiggle_amplitude(
     use_std_as_amp=whether_to_get_amplitude_as_standard_deviation,
 )
 ```
-Only rs and phis are required. If vel_is_zero = True, the reference_curve is simply taken as the minor axis (i.e, $\phi = \pm \phi / 2$).
+Only rs and phis are required. If vel_is_zero = True, the reference_curve is simply taken as the minor axis (i.e, $\phi = \pm \pi / 2$).
 
 One can also calculate the azimuthal average of an array of data using
 ```python
