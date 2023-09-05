@@ -267,7 +267,6 @@ def get_wiggle_amplitude(
             if len(used_phis) != len(used_ref_phis)
             else np.std(np.abs(used_phis - used_ref_phis))
         )
-        ### TODO: Check why this always returns all
         if return_diffs:
             return amp, used_rs, used_phis - used_ref_phis
         return amp
