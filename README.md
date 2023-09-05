@@ -23,7 +23,7 @@ import protomatics as pm
 
 ### Basic Examples
 
-(Note: all dashes given in the text should be considered underscores.)
+(Note: all dashes given in the text variable names should be considered underscores.)
 
 #### Plotting
 
