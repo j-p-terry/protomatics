@@ -478,3 +478,57 @@ def polar_plot(
         plt.show()
     else:
         plt.close()
+
+
+def basic_image_plot(
+    data: np.ndarray,
+    xlabel: str = "",
+    ylabel: str = "",
+    cbar_label: str = "",
+    plot_cmap: str = "magma",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    save: bool = False,
+    show: bool = True,
+    save_name: str = "plot.pdf",
+    log: bool = False,
+    **kwargs,
+) -> None:
+    """Plots a basic image"""
+
+    # get font information if given
+    label_font = kwargs.get("label_font", labels)
+    tick_font = kwargs.get("tick_font", ticks)
+    legend_font = kwargs.get("legend_font", legends)
+    # override default figure size
+    figsize = kwargs.get("figsize", (14.0, 10.5))
+
+    fig = plt.figure(figsize=figsize)
+
+    # make a log normalizer
+    norm = LogNorm(vmin, vmax) if log else None
+
+    # plot
+    if log:
+        plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax, norm=norm)
+    else:
+        plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax)
+
+    cbar = fig.colorbar(fraction=0.045, pad=0.025, extend="both")
+    cbar.ax.set_ylabel(cbar_label, rotation=270, fontsize=legend_font, labelpad=0.05)
+    cbar.ax.tick_params(labelsize=tick_font)
+    cbar.ax.get_yaxis().labelpad = 40
+
+    plt.xlabel(xlabel, fontsize=label_font)
+    plt.ylabel(ylabel, fontsize=label_font)
+
+    plt.xticks(fontsize=tick_font)
+    plt.yticks(fontsize=tick_font)
+
+    if save:
+        plt.savefig(save_name)
+
+    if show:
+        plt.show()
+    else:
+        plt.close()

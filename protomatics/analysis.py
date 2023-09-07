@@ -1,12 +1,15 @@
 from typing import Optional
 
 import bettermoments as bm
+import h5py
 import numpy as np
+import pandas as pd
 from astropy.io import fits
+from scipy.interpolate import griddata
 
 from .constants import au_pc
 from .helpers import cylindrical_to_cartesian
-from .plotting import plot_wcs_data
+from .plotting import basic_image_plot, plot_wcs_data
 
 ##############################################################
 ##############################################################
@@ -318,3 +321,132 @@ def get_wiggle_amplitude(
         return 0
 
     return coeff * np.sqrt(diff_length / ref_length)
+
+
+def make_hdf5_dataframe(
+    file_path: str,
+    extra_file_keys: Optional[list] = None,
+) -> pd.DataFrame:
+    """Reads an HDF5 file and returns a dataframe with the variables in file_keys"""
+
+    # read in file
+    file = h5py.File(file_path, "r")
+
+    # basic information that is always loaded
+    basic_keys = ["x", "y", "z", "vz", "vy", "zy", "r", "phi", "vr", "vphi"]
+
+    # initialize dataframe
+    hdf5_df = pd.DataFrame(columns=basic_keys)
+
+    # make basic information
+    xyzs = file["particles/xyz"][:]
+    vxyzs = file["particles/vxyz"][:]
+    hdf5_df["x"] = xyzs[:, 0]
+    hdf5_df["y"] = xyzs[:, 1]
+    hdf5_df["z"] = xyzs[:, 2]
+    hdf5_df["r"] = np.sqrt(hdf5_df.x**2 + hdf5_df.y**2)
+    hdf5_df["phi"] = np.arctan2(hdf5_df.y, hdf5_df.x)
+    hdf5_df["vx"] = vxyzs[:, 0]
+    hdf5_df["vy"] = vxyzs[:, 1]
+    hdf5_df["vz"] = vxyzs[:, 2]
+    hdf5_df["vphi"] = -hdf5_df.vx * np.sin(hdf5_df.phi) + hdf5_df.vy * np.cos(hdf5_df.phi)
+    hdf5_df["vr"] = (hdf5_df.x * hdf5_df.vx + hdf5_df.y * hdf5_df.vy) / hdf5_df.r
+
+    # add any extra information if you want and can
+    if extra_file_keys is not None:
+        for key in extra_file_keys:
+            if key in hdf5_df.columns:
+                continue
+            if key not in file["particles"].keys():
+                continue
+            # only add if each entry is a scalar
+            if len(file[f"particles/{key}"][:].shape) == 1:
+                hdf5_df[key] = file[f"particles/{key}"][:]
+
+    return hdf5_df
+
+
+def make_interpolated_hdf5_grid(
+    hdf5_df: Optional[pd.DataFrame] = None,
+    grid_size: int = 600,
+    interpolate_value: str = "vphi",
+    file_path: Optional[str] = None,
+    extra_file_keys: Optional[list] = None,
+    return_grids: bool = False,
+) -> np.ndarray:
+    """Makes an interpolated grid of a given value in a dataframe"""
+
+    assert (
+        hdf5_df is not None or file_path is not None
+    ), "No data! Provide dataframe or path to hdf5 file"
+
+    # load dataframe if not already given
+    if hdf5_df is None:
+        hdf5_df = make_hdf5_dataframe(file_path, extra_file_keys=extra_file_keys)
+
+    # make sure it's in there
+    assert interpolate_value in hdf5_df.columns, "Data not in dataframe!"
+
+    rmax = np.max([np.ceil(np.max(hdf5_df.x)), np.ceil(np.max(hdf5_df.y))])
+    rmin = np.min([np.ceil(np.min(hdf5_df.x)), np.ceil(np.min(hdf5_df.y))])
+
+    # make grid of disk
+    gr, gphi, gx, gy = make_grids(r_min=rmin, r_max=rmax, num_r=grid_size)
+
+    # Interpolate using griddata
+    interpolated_grid = griddata(
+        (hdf5_df.x.to_numpy(), hdf5_df.y.to_numpy()),
+        hdf5_df[interpolate_value].to_numpy(),
+        (gx, gy),
+        method="linear",
+        fill_value=0.0,
+    )
+    if not return_grids:
+        return interpolated_grid
+    return interpolated_grid, (gr, gphi, gx, gy)
+
+
+def calculate_doppler_flip(
+    hdf5_path: str,
+    grid_size: int = 600,
+    plot: bool = False,
+    save_plot: bool = False,
+    save_name: str = "",
+    xlabel: str = "x [au]",
+    ylabel: str = "y [au]",
+    cbar_label: str = r"$v_{\phi} - \langle v_{\phi} \rangle$ [km s$^{-1}$]",
+    show_plot: bool = False,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+) -> np.ndarray:
+    """
+    Calculates the doppler flip of a disk given an HDF5 output
+    Returns the doppler flip map, the phi velocity field, and the azimuthally averaged vphi
+    """
+
+    vphi, grids = make_interpolated_hdf5_grid(
+        hdf5_df=None,
+        grid_size=grid_size,
+        interpolate_value="vphi",
+        file_path=hdf5_path,
+        return_grids=True,
+    )
+
+    _, avg_vphi_map = calc_azimuthal_average(vphi, r_grid=grids[0])
+
+    doppler_flip = vphi.copy() - avg_vphi_map.copy()
+
+    if plot:
+        basic_image_plot(
+            doppler_flip,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            cbar_label=cbar_label,
+            save=save_plot,
+            save_name=save_name,
+            show=show_plot,
+            vmin=vmin,
+            vmax=vmax,
+        )
+
+    return doppler_flip, vphi, avg_vphi_map
