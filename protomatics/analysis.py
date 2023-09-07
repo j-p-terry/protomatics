@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import bettermoments as bm
 import h5py
@@ -373,7 +373,7 @@ def make_interpolated_hdf5_grid(
     file_path: Optional[str] = None,
     extra_file_keys: Optional[list] = None,
     return_grids: bool = False,
-) -> np.ndarray:
+) -> Union[np.ndarray, tuple]:
     """Makes an interpolated grid of a given value in a dataframe"""
 
     assert (
