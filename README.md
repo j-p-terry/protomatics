@@ -80,6 +80,24 @@ pm.polar_plot(rs, phis, scatter=whether_to_use_scatter_or_line)
 
 will make a scatter or line plot in polar coordinates depending on the value of $\mathrm{\texttt{scatter}}$.
 
+Basic image plots can be made with
+```python
+pm.basic_image_plot(
+    data,
+    xlabel="",
+    ylabel="",
+    cbar_label="",
+    plot_cmap="magma",
+    vmin=None,
+    vmax=None,
+    save=False,
+    show=True,
+    save_name="plot.pdf",
+    log=False,
+)
+```
+
+
 
 #### Moment calculation and analysis
 
@@ -121,7 +139,7 @@ with similar key word arguments to pm.make_moments()
 Wiggles can be extracted in either position-position space (where moment-1 = 0) of position-velocity space (velocity along minor axis).
 
 ```python
-wiggle_rs, wiggle_y = pm.extrac_wiggle(
+wiggle_rs, wiggle_y = pm.extract_wiggle(
     moment1_map,
     in_pv_space=whether_to_get_positon_velocity_wiggle,
     rotation_angle=minor_axis_offset_in_degrees,
@@ -152,6 +170,63 @@ average_by_r, average_map = pm.calc_azimuthal_average(
 ```
 $\mathrm{\texttt{data}}$ is mandatory, but the grid is not. If no grid is provided, the radii will be calculated in terms of pixels instead of the physical space defined by $\mathrm{\texttt{r-grid}}$.
 
-This method is conveneint for calculating Doppler flip plots if $\mathrm{\texttt{data}}$ = moment1\_map.
+This method is conveneint for calculating Doppler flip plots if $\mathrm{\texttt{data}}$ = azimuthal velocity field
+
+#### HDF5 Analysis
+
+Adding the ability to analyze HDF5 files (e.g. created from PHANTOM outputs) is ongoing. As of now, HDF5 files can be loaded as Pandas dataframes, which can be used to do things such as make an interpolated map of a given value or calculate values such as Fourier amplitudes. Loading a dataframe can be done with
+
+```python
+pm.make_hdf5_dataframe(path_to_hdf5_file, extra_file_keys=None)
+```
+This will return a dataframe with the x, y, z, r, and $\phi$ positions of each particle as well as the x, y, z, r, and $\phi$ components of their velocity. $\mathrm{\texttt{extra-file-keys}}$ is a list of additional data to load. This can be done for any scalar value with a corresponding key in the HDF5 particle dataset. If one wants to load the magnetic field, the key "Bxyz" should be used. This will add the x, y, z, r, and $\phi$ components of the magnetic field to the dataframe.
+
+A 2D grid of interpolated data can be made using this dataframe. Any value in the dataframe can be made into a grid. This is done with
+
+```python
+pm.make_interpolated_hdf5_grid(
+    dataframe,
+    grid_size=height_of_grid_in_pixels,
+    interpolate_value=value_to_use,
+    file_path=path_to_hd5f_file,
+    extra_file_keys=any_extra_info,
+    return_grids=return_grids_that_were_made,
+)
+```
+$\mathrm{\texttt{dataframe}}$ can be None, but then $\mathrm{\texttt{file-path}}$ needs to be the path to the HDF5 file to be used.
+
+This is all put together to calculate the Doppler flip with
+
+```pyton
+pm.calculate_doppler_flip(hdf5_path,
+                        grid_size=height_of_grid_in_pixels,
+                        interpolate_value=value_to_use,
+                        file_path=path_to_hd5f_file,
+                        extra_file_keys=None,
+                        return_grids=False,
+                        plot=whether_to_plot,
+                        save_plot=whether_to_save_plot,
+                        show_plot=whether_to_show_plot,
+                        xlabel=plot_xlabel,
+                        ylabel=plot_ylabel,
+                        vmin=plot_minimum_value,
+                        vmax=plot_maximum_value,
+)
+```
+
+This will return a map of the doppler flip, a map of the azimuthal velocity, and a map of the azimuthally averaged azimuthal velocity.
+
+HDF5 files can also be used to calculate Fourier amplitudes for given modes within an annulus between a set radial range. This is done with
+
+```python
+pm.calculate_fourier_amps(
+    r_min,
+    r_max,
+    modes=modes_to_use,
+    hdf5_df=loaded_hdf5_dataframe,
+    hdf5_path=path_to_hdf5_file_if_not_loaded,
+)
+```
+
 
 Other functionality is quickly being added. Please report any bugs. More substantial documentation is coming soon.
