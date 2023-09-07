@@ -350,7 +350,7 @@ def make_hdf5_dataframe(
     hdf5_df["vy"] = vxyzs[:, 1]
     hdf5_df["vz"] = vxyzs[:, 2]
     hdf5_df["vphi"] = -hdf5_df.vx * np.sin(hdf5_df.phi) + hdf5_df.vy * np.cos(hdf5_df.phi)
-    hdf5_df["vr"] = (hdf5_df.x * hdf5_df.vx + hdf5_df.y * hdf5_df.vy) / hdf5_df.r
+    hdf5_df["vr"] = hdf5_df.vx * np.cos(hdf5_df.phi) + hdf5_df.vy * np.sin(hdf5_df.phi)
 
     # add any extra information if you want and can
     if extra_file_keys is not None:
@@ -362,6 +362,18 @@ def make_hdf5_dataframe(
             # only add if each entry is a scalar
             if len(file[f"particles/{key}"][:].shape) == 1:
                 hdf5_df[key] = file[f"particles/{key}"][:]
+            # if looking for components
+            if key == "Bxyz":
+                bxyzs = file["particles/Bxyz"][:]
+                hdf5_df["Bx"] = bxyzs[:, 0]
+                hdf5_df["By"] = bxyzs[:, 1]
+                hdf5_df["Bz"] = bxyzs[:, 2]
+                hdf5_df["Br"] = hdf5_df.Bx * np.cos(hdf5_df.phi) + hdf5_df.By * np.sin(
+                    hdf5_df.phi
+                )
+                hdf5_df["Bphi"] = -hdf5_df.Bx * np.sin(hdf5_df.phi) + hdf5_df.By * np.cos(
+                    hdf5_df.phi
+                )
 
     return hdf5_df
 
@@ -447,6 +459,7 @@ def calculate_doppler_flip(
             show=show_plot,
             vmin=vmin,
             vmax=vmax,
+            plot_cmap="RdBu_r",
         )
 
     return doppler_flip, vphi, avg_vphi_map
