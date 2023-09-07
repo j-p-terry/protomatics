@@ -450,3 +450,38 @@ def calculate_doppler_flip(
         )
 
     return doppler_flip, vphi, avg_vphi_map
+
+
+def calculate_fourier_amps(
+    r_min: float,
+    r_max: float,
+    modes: tuple = (1, 2, 3),
+    hdf5_df: Optional[pd.DataFrame] = None,
+    hdf5_path: Optional[str] = None,
+) -> dict:
+    """Calculates the fourier mode within a radial range according to Eq 12 of Hall (2019)"""
+
+    assert (
+        hdf5_df is not None or hdf5_path is not None
+    ), "No data! Provide dataframe or path to hdf5 file"
+
+    if hdf5_df is None:
+        hdf5_df = make_hdf5_dataframe(hdf5_path)
+
+    # trim to correct radial range
+    hdf5_df = hdf5_df[(hdf5_df["r"] < r_max) & (hdf5_df["r"] > r_min)]
+
+    # get number of particles
+    N = len(hdf5_df)
+
+    amps = {mode: 0.0 for mode in modes}
+
+    # get amplitude for each mode
+    for mode in modes:
+        # get phase for each particle
+        hdf5_df["exp_m_phi"] = np.exp(-1.0j * mode * hdf5_df["phi"])
+        coeffs = hdf5_df["exp_m_phi"].to_numpy()
+
+        amps[mode] = abs(np.sum(coeffs)) / N
+
+    return amps

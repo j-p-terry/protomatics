@@ -1,6 +1,8 @@
 astropy
 bettermoments
+h5py
 matplotlib
 numpy
+pandas
 pytest
 scipy

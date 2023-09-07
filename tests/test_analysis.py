@@ -9,8 +9,12 @@ sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
 from protomatics.analysis import (
     calc_azimuthal_average,
+    calculate_doppler_flip,
+    calculate_fourier_amps,
     get_wiggle_amplitude,
     make_grids,
+    make_hdf5_dataframe,
+    make_interpolated_hdf5_grid,
     make_peak_vel_map,
 )
 from protomatics.moments import calculate_keplerian_moment1, extract_wiggle, make_moments
@@ -118,3 +122,64 @@ def test_wiggle_amplitude(fits_name):
     _ = get_wiggle_amplitude(
         rs, phis, ref_rs=kep_rs, ref_phis=kep_phis, vel_is_zero=False, use_std_as_amp=True
     )
+
+    print("Passed!")
+
+
+@pytest.mark.parametrize("hdf5_name", ["test_hdf5.h5"])
+def test_hdf5(hdf5_name):
+    """Tests calculating the doppler flip"""
+
+    path = f"./tests/data/{hdf5_name}"
+
+    print("Loading dataframe")
+    _ = make_hdf5_dataframe(path)
+    print("Loading with extra information")
+    hdf5_df = make_hdf5_dataframe(
+        path,
+        extra_file_keys=["h", "dt", "eta_AD", "Bxyz"],
+    )
+
+    print("Testing grid with loaded frame")
+    _ = make_interpolated_hdf5_grid(hdf5_df=hdf5_df, grid_size=200)
+
+    print("Testing grid with no loaded frame")
+    _ = make_interpolated_hdf5_grid(hdf5_df=None, file_path=path, grid_size=200)
+
+    print("Passed!")
+
+
+@pytest.mark.parametrize("hdf5_name", ["test_hdf5.h5"])
+def test_doppler_flip(hdf5_name):
+    """Tests calculating the doppler flip"""
+
+    path = f"./tests/data/{hdf5_name}"
+
+    print("Calculating Doppler flip")
+    _ = calculate_doppler_flip(path, grid_size=200)
+
+    print("Calculating Doppler flip and plotting map")
+    _ = calculate_doppler_flip(path, plot=True, show_plot=False, save_plot=False, grid_size=200)
+
+    print("Passed!")
+
+
+@pytest.mark.parametrize("hdf5_name", ["test_hdf5.h5"])
+def test_fourier_modes(hdf5_name):
+    """Tests calculating the doppler flip"""
+
+    path = f"./tests/data/{hdf5_name}"
+
+    print("Loading dataframe")
+    hdf5_df = make_hdf5_dataframe(path)
+
+    r_min = 50.0
+    r_max = 75.0
+
+    print("Calculating modes with loaded frame")
+    _ = calculate_fourier_amps(r_min, r_max, hdf5_df=hdf5_df)
+
+    print("Calculating modes without loaded frame")
+    _ = calculate_fourier_amps(r_min, r_max, hdf5_df=None, hdf5_path=path)
+
+    print("Passed!")

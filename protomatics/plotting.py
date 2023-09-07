@@ -510,11 +510,11 @@ def basic_image_plot(
 
     # plot
     if log:
-        plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax, norm=norm)
+        im = plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax, norm=norm)
     else:
-        plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax)
+        im = plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax)
 
-    cbar = fig.colorbar(fraction=0.045, pad=0.025, extend="both")
+    cbar = fig.colorbar(im, fraction=0.045, pad=0.025, extend="both")
     cbar.ax.set_ylabel(cbar_label, rotation=270, fontsize=legend_font, labelpad=0.05)
     cbar.ax.tick_params(labelsize=tick_font)
     cbar.ax.get_yaxis().labelpad = 40
