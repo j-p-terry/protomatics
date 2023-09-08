@@ -430,6 +430,7 @@ def calculate_doppler_flip(
     show_plot: bool = False,
     vmin: Optional[float] = None,
     vmax: Optional[float] = None,
+    put_in_kms: bool = True,
 ) -> np.ndarray:
     """
     Calculates the doppler flip of a disk given an HDF5 output
@@ -445,6 +446,17 @@ def calculate_doppler_flip(
     )
 
     _, avg_vphi_map = calc_azimuthal_average(vphi, r_grid=grids[0])
+
+    # get code units
+    if put_in_kms:
+        # read in file
+        units = get_code_units(hdf5_path)
+        utime, udist = units[1:]
+        uvel = udist / utime
+        vphi *= uvel  # cm/s
+        avg_vphi_map *= uvel
+        vphi *= 1e-4  # km/s
+        avg_vphi_map *= 1e-4
 
     doppler_flip = vphi.copy() - avg_vphi_map.copy()
 
@@ -463,6 +475,19 @@ def calculate_doppler_flip(
         )
 
     return doppler_flip, vphi, avg_vphi_map
+
+
+def get_code_units(hdf5_path: str) -> list:
+    """Gets the code units from a simulation"""
+
+    # read in file
+    file = h5py.File(hdf5_path, "r")
+
+    umass = file["header/umass"][()]  ## M_sol in grams
+    utime = file["header/utime"][()]
+    udist = file["header/udist"][()]  ## au in cm
+
+    return [umass, utime, udist]
 
 
 def calculate_fourier_amps(
