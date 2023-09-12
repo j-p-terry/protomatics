@@ -189,7 +189,7 @@ def plot_wcs_data(
 
     # plot
     if log:
-        plt.imshow(plot_data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax, norm=norm)
+        plt.imshow(plot_data, origin="lower", cmap=plot_cmap, norm=norm)
     else:
         plt.imshow(plot_data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax)
 
