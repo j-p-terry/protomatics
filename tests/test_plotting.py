@@ -41,6 +41,14 @@ def test_wcs_plot(fits_name):
     print("Plotting with subtraction")
     plot_wcs_data(hdu, subtract_channels=[0, -1], show=False)
 
+    # with additional options
+    print("Plotting with maximum values")
+    plot_wcs_data(hdu, vmax=0.8, vmin=0.2, show=False)
+
+    # with additional options
+    print("Plotting with log norm")
+    plot_wcs_data(hdu, vmax=0.8, vmin=0.2, log=True, show=False)
+
     if "cube" in fits_name:
         overlay_hdu = fits.open("./tests/data/test_2d.fits")
     else:
