@@ -179,6 +179,8 @@ def plot_wcs_data(
             channel=channel,
             subtract_channels=subtract_channels,
         )
+    else:
+        plot_data *= scale_data
 
     if subtract_data is not None:
         plot_data = plot_data.copy()
