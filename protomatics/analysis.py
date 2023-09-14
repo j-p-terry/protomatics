@@ -514,11 +514,11 @@ def calculate_fourier_amps(
 
     amps = {mode: 0.0 for mode in modes}
 
-    # get amplitude for each mode
+    # go over each mode
     for mode in modes:
         # get phase for each particle
         hdf5_df["exp_m_phi"] = np.exp(-1.0j * mode * hdf5_df["phi"])
-        coeffs = hdf5_df["exp_m_phi"].to_numpy()
+        coeffs = hdf5_df.exp_m_phi.to_numpy()
 
         amps[mode] = abs(np.sum(coeffs)) / N
 
