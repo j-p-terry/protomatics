@@ -494,6 +494,8 @@ def basic_image_plot(
     show: bool = True,
     save_name: str = "plot.pdf",
     log: bool = False,
+    trimx: int = 0,
+    trimy: int = 0,
     **kwargs,
 ) -> None:
     """Plots a basic image"""
@@ -512,7 +514,7 @@ def basic_image_plot(
 
     # plot
     if log:
-        im = plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax, norm=norm)
+        im = plt.imshow(data, origin="lower", cmap=plot_cmap, norm=norm)
     else:
         im = plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax)
 
@@ -526,6 +528,11 @@ def basic_image_plot(
 
     plt.xticks(fontsize=tick_font)
     plt.yticks(fontsize=tick_font)
+
+    if trimx > 0:
+        plt.xlim(trimx, data.shape[1] - trimx)
+    if trimy > 0:
+        plt.ylim(trimy, data.shape[0] - trimy)
 
     if save:
         plt.savefig(save_name)
