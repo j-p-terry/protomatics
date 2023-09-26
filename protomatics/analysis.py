@@ -333,7 +333,7 @@ def make_hdf5_dataframe(
     file = h5py.File(file_path, "r")
 
     # basic information that is always loaded
-    basic_keys = ["x", "y", "z", "vz", "vy", "zy", "r", "phi", "vr", "vphi"]
+    basic_keys = ["x", "y", "z", "vz", "vy", "vz", "r", "phi", "vr", "vphi"]
 
     # initialize dataframe
     hdf5_df = pd.DataFrame(columns=basic_keys)
