@@ -120,6 +120,7 @@ def plot_wcs_data(
     plot_beam: bool = False,
     plot_overlay_beam: bool = False,
     show: bool = True,
+    num_levels: Optional[int] = None,
     **kwargs,
 ) -> None:
     """
@@ -249,6 +250,7 @@ def plot_wcs_data(
                 this_overlay_data,
                 transform=ax.get_transform(overlay_wcs),
                 colors=overlay_cmap[i],
+                levels=num_levels,
             )
 
     # set axis labels
@@ -356,7 +358,13 @@ def plot_polar_and_get_contour(
         warnings.simplefilter("ignore")
         im = ax.pcolormesh(phis, rs, data, cmap=plot_cmap)
     # extract the contour for the contour_value
-    contour = ax.contour(phis, rs, data, levels=[contour_value], colors="k")
+    contour = ax.contour(
+        phis,
+        rs,
+        data,
+        levels=[contour_value],
+        colors="k",
+    )
 
     ax.tick_params(pad=20)
 
