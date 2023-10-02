@@ -1,4 +1,4 @@
-janksy = 1e-23  # Watt /sq M / Hz
+janksy = 1e-26  # Watt /sq M / Hz
 G = 6.67e-11  # SI
 G_cgs = 6.67e-8  # cgs
 au = 149597870700.0  # m
