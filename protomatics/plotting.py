@@ -101,6 +101,7 @@ def plot_wcs_data(
     trim: tuple = (None, None),
     vmin: Optional[float] = None,
     vmax: Optional[float] = None,
+    overlay_data: Optional[np.ndarray] = None,
     overlay_hdu: Optional[list] = None,
     overlay_pmin: Optional[float] = None,
     overlay_channels: Optional[list] = None,
@@ -211,7 +212,8 @@ def plot_wcs_data(
         overlay_hdu[0].header["CRVAL2"] = 0.0
         overlay_wcs = WCS(overlay_hdu[0].header, naxis=2)
 
-        overlay_data = overlay_hdu[0].data.copy().squeeze()
+        if overlay_data is not None:
+            overlay_data = overlay_hdu[0].data.copy().squeeze()
 
         # make sure we have a channel axis to iterate over (e.g. for continuum)
         if len(overlay_data.shape) == 2:
