@@ -323,6 +323,24 @@ def get_wiggle_amplitude(
     return coeff * np.sqrt(diff_length / ref_length)
 
 
+def make_ev_dataframe(file_path: str) -> pd.DataFrame:
+    """Reads in a .ev file and returns a pandas dataframe"""
+
+    # load the data
+    ev_df = pd.read_csv(file_path, sep=r"\s+", header=None, skiprows=1)
+
+    # get the column names
+    with open(file_path) as f:
+        line = f.readline()
+    header = line.split("[")[1:]
+    header = [x.split()[1][:-1] for x in header]
+
+    # assign header to dataframe
+    ev_df.columns = header
+
+    return ev_df
+
+
 def make_hdf5_dataframe(
     file_path: str,
     extra_file_keys: Optional[list] = None,
