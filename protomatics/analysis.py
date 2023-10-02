@@ -324,7 +324,7 @@ def get_wiggle_amplitude(
 
 
 def make_ev_dataframe(file_path: str) -> pd.DataFrame:
-    """Reads in a .ev file and returns a pandas dataframe"""
+    """Reads in a PHANTOM .ev file and returns a pandas dataframe"""
 
     # load the data
     ev_df = pd.read_csv(file_path, sep=r"\s+", header=None, skiprows=1)
@@ -332,8 +332,20 @@ def make_ev_dataframe(file_path: str) -> pd.DataFrame:
     # get the column names
     with open(file_path) as f:
         line = f.readline()
-    header = line.split("[")[1:]
-    header = [x.split()[1][:-1] for x in header]
+
+    # PHANTOM ev files start with # and columns are bracketed with [...]
+    header_ = line.split("[")[1:]
+    header = []
+    for x in header_:
+        y = x.split()[1:]
+        name = ""
+        while len(y) > 0:
+            name += y[0]
+            name += "_"
+            y = y[1:]
+        # column ends with ] and there's an extra _
+        name = name[:-2]
+        header.append(name)
 
     # assign header to dataframe
     ev_df.columns = header
