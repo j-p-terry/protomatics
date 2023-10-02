@@ -43,7 +43,7 @@ def test_wcs_plot(fits_name):
 
     # with additional options
     print("Plotting with maximum values")
-    plot_wcs_data(hdu, vmax=0.8, vmin=0.2, show=False)
+    plot_wcs_data(hdu, vmax=0.8, vmin=0.2, show=False, interpolation="bicubic")
 
     # with additional options
     print("Plotting with log norm")
