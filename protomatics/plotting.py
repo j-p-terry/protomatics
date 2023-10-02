@@ -122,6 +122,7 @@ def plot_wcs_data(
     plot_overlay_beam: bool = False,
     show: bool = True,
     num_levels: Optional[int] = None,
+    interpolation: str = "none",
     **kwargs,
 ) -> None:
     """
@@ -144,6 +145,7 @@ def plot_wcs_data(
     # override default colormaps
     overlay_cmap = kwargs.get("overlay_cmap", categorical_cmap)
     overlay_color_list = kwargs.get("overlay_color_list", colors)
+    overlay_alpha = kwargs.get("overlay_alpha", 1.0)
 
     if fits_path is not None:
         hdu = fits.open(fits_path)
@@ -193,9 +195,18 @@ def plot_wcs_data(
 
     # plot
     if log:
-        plt.imshow(plot_data, origin="lower", cmap=plot_cmap, norm=norm)
+        plt.imshow(
+            plot_data, origin="lower", cmap=plot_cmap, norm=norm, interpolation=interpolation
+        )
     else:
-        plt.imshow(plot_data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax)
+        plt.imshow(
+            plot_data,
+            origin="lower",
+            cmap=plot_cmap,
+            vmin=vmin,
+            vmax=vmax,
+            interpolation=interpolation,
+        )
 
     cbar = plt.colorbar(fraction=0.045, pad=0.005)
     cbar.ax.set_ylabel(plot_units, rotation=270, fontsize=legend_font)
@@ -212,7 +223,7 @@ def plot_wcs_data(
         overlay_hdu[0].header["CRVAL2"] = 0.0
         overlay_wcs = WCS(overlay_hdu[0].header, naxis=2)
 
-        if overlay_data is not None:
+        if overlay_data is None:
             overlay_data = overlay_hdu[0].data.copy().squeeze()
 
         # make sure we have a channel axis to iterate over (e.g. for continuum)
@@ -253,6 +264,7 @@ def plot_wcs_data(
                 transform=ax.get_transform(overlay_wcs),
                 colors=overlay_cmap[i],
                 levels=num_levels,
+                alpha=overlay_alpha,
             )
 
     # set axis labels
