@@ -454,7 +454,7 @@ def polar_plot(
     ps = kwargs.get("ps", s)
 
     mplrc("xtick", labelsize=tick_font)
-    mplrc("ytick", labelsize=ticks)
+    mplrc("ytick", labelsize=tick_font)
 
     _, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": "polar"})
 
