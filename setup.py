@@ -10,7 +10,7 @@ with open(os.path.join(this_directory, "README.md")) as f:
 
 setuptools.setup(
     name="protomatics",
-    version="0.1.2",
+    version="0.2.0",
     author="Jason Terry",
     author_email="jpterry@uga.edu",
     packages=["protomatics"],
@@ -29,7 +29,7 @@ setuptools.setup(
         "scipy",
     ],
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
