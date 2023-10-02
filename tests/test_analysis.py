@@ -12,6 +12,7 @@ from protomatics.analysis import (
     calculate_doppler_flip,
     calculate_fourier_amps,
     get_wiggle_amplitude,
+    make_ev_dataframe,
     make_grids,
     make_hdf5_dataframe,
     make_interpolated_hdf5_grid,
@@ -145,6 +146,18 @@ def test_hdf5(hdf5_name):
 
     print("Testing grid with no loaded frame")
     _ = make_interpolated_hdf5_grid(hdf5_df=None, file_path=path, grid_size=200)
+
+    print("Passed!")
+
+
+@pytest.mark.parametrize("ev_name", ["test.ev"])
+def test_ev(ev_name):
+    """Tests calculating the doppler flip"""
+
+    path = f"./tests/data/{ev_name}"
+
+    print("Loading ev dataframe")
+    _ = make_ev_dataframe(path)
 
     print("Passed!")
 
