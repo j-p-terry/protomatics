@@ -126,6 +126,7 @@ def make_peak_vel_map(
 def calc_azimuthal_average(
     data: np.ndarray,
     r_grid: Optional[np.ndarray] = None,
+    r_tol: float = 0.0,
 ) -> tuple:
     """Calculates the azimuthal average of data"""
 
@@ -149,7 +150,7 @@ def calc_azimuthal_average(
     az_averages = {}
     # mask the moment where everything isn't at a given radius and take the mean
     for r in rs:
-        mask = r_grid == r
+        mask = np.abs(r_grid - r) <= r_tol
         az_averages[r] = np.mean(data[mask]) if np.any(mask) else 0
 
     # Map the averages to the original shape
@@ -461,6 +462,7 @@ def calculate_doppler_flip(
     vmin: Optional[float] = None,
     vmax: Optional[float] = None,
     put_in_kms: bool = True,
+    r_tol: float = 0.0,
 ) -> np.ndarray:
     """
     Calculates the doppler flip of a disk given an HDF5 output
@@ -475,7 +477,7 @@ def calculate_doppler_flip(
         return_grids=True,
     )
 
-    _, avg_vphi_map = calc_azimuthal_average(vphi, r_grid=grids[0])
+    _, avg_vphi_map = calc_azimuthal_average(vphi, r_grid=grids[0], r_tol=r_tol)
 
     # get code units
     if put_in_kms:
