@@ -489,8 +489,8 @@ def calculate_doppler_flip(
         uvel = udist / utime
         vphi *= uvel  # cm/s
         avg_vphi_map *= uvel
-        vphi *= 1e-4  # km/s
-        avg_vphi_map *= 1e-4
+        vphi *= 1e-5  # km/s
+        avg_vphi_map *= 1e-5
 
     doppler_flip = vphi.copy() - avg_vphi_map.copy()
 
