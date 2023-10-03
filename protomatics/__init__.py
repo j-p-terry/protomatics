@@ -3,4 +3,4 @@ from .helpers import *
 from .moments import *
 from .plotting import *
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
