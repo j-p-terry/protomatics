@@ -472,7 +472,7 @@ def calculate_doppler_flip(
     """
 
     vphi, grids = make_interpolated_grid(
-        hdf5_df=None,
+        dataframe=None,
         grid_size=grid_size,
         interpolate_value="vphi",
         file_path=hdf5_path,
