@@ -142,10 +142,10 @@ def test_hdf5(hdf5_name):
     )
 
     print("Testing grid with loaded frame")
-    _ = make_interpolated_grid(hdf5_df=hdf5_df, grid_size=200)
+    _ = make_interpolated_grid(dataframe=hdf5_df, grid_size=200)
 
     print("Testing grid with no loaded frame and different axis")
-    _ = make_interpolated_grid(hdf5_df=None, file_path=path, grid_size=200, yaxis="z")
+    _ = make_interpolated_grid(dataframe=None, file_path=path, grid_size=200, yaxis="z")
 
     print("Passed!")
 
