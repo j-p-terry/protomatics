@@ -64,7 +64,7 @@ def test_azimuthal_average(fits_name):
     # test with grid
     gr, _, _, _ = make_grids(hdu)
     print("Azimuthal average with grid")
-    _ = calc_azimuthal_average(moment1, r_grid=gr)
+    _ = calc_azimuthal_average(moment1, r_grid=gr, r_tol=2.0)
 
     print("Passed!")
 
@@ -144,8 +144,8 @@ def test_hdf5(hdf5_name):
     print("Testing grid with loaded frame")
     _ = make_interpolated_grid(hdf5_df=hdf5_df, grid_size=200)
 
-    print("Testing grid with no loaded frame")
-    _ = make_interpolated_grid(hdf5_df=None, file_path=path, grid_size=200)
+    print("Testing grid with no loaded frame and different axis")
+    _ = make_interpolated_grid(hdf5_df=None, file_path=path, grid_size=200, yaxis="z")
 
     print("Passed!")
 
