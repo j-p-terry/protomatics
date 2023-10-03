@@ -181,10 +181,10 @@ pm.make_hdf5_dataframe(path_to_hdf5_file, extra_file_keys=None)
 ```
 This will return a dataframe with the x, y, z, r, and $\phi$ positions of each particle as well as the x, y, z, r, and $\phi$ components of their velocity. $\mathrm{\texttt{extra-file-keys}}$ is a list of additional data to load. This can be done for any scalar value with a corresponding key in the HDF5 particle dataset. If one wants to load the magnetic field, the key "Bxyz" should be used. This will add the x, y, z, r, and $\phi$ components of the magnetic field to the dataframe.
 
-A 2D grid of interpolated data can be made using this dataframe. Any value in the dataframe can be made into a grid. This is done with
+A 2D grid of interpolated data can be made using this dataframe (or any dataframe). Any value in the dataframe can be made into a grid. This is done with
 
 ```python
-pm.make_interpolated_hdf5_grid(
+pm.make_interpolated_grid(
     dataframe,
     grid_size=height_of_grid_in_pixels,
     interpolate_value=value_to_use,

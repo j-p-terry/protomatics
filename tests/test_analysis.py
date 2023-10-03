@@ -15,7 +15,7 @@ from protomatics.analysis import (
     make_ev_dataframe,
     make_grids,
     make_hdf5_dataframe,
-    make_interpolated_hdf5_grid,
+    make_interpolated_grid,
     make_peak_vel_map,
 )
 from protomatics.moments import calculate_keplerian_moment1, extract_wiggle, make_moments
@@ -142,10 +142,10 @@ def test_hdf5(hdf5_name):
     )
 
     print("Testing grid with loaded frame")
-    _ = make_interpolated_hdf5_grid(hdf5_df=hdf5_df, grid_size=200)
+    _ = make_interpolated_grid(hdf5_df=hdf5_df, grid_size=200)
 
     print("Testing grid with no loaded frame")
-    _ = make_interpolated_hdf5_grid(hdf5_df=None, file_path=path, grid_size=200)
+    _ = make_interpolated_grid(hdf5_df=None, file_path=path, grid_size=200)
 
     print("Passed!")
 

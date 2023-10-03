@@ -409,37 +409,39 @@ def make_hdf5_dataframe(
     return hdf5_df
 
 
-def make_interpolated_hdf5_grid(
-    hdf5_df: Optional[pd.DataFrame] = None,
+def make_interpolated_grid(
+    dataframe: Optional[pd.DataFrame] = None,
     grid_size: int = 600,
     interpolate_value: str = "vphi",
     file_path: Optional[str] = None,
     extra_file_keys: Optional[list] = None,
     return_grids: bool = False,
+    xaxis: str = "x",
+    yaxis: str = "y",
 ) -> Union[np.ndarray, tuple]:
     """Makes an interpolated grid of a given value in a dataframe"""
 
     assert (
-        hdf5_df is not None or file_path is not None
+        dataframe is not None or file_path is not None
     ), "No data! Provide dataframe or path to hdf5 file"
 
     # load dataframe if not already given
-    if hdf5_df is None:
-        hdf5_df = make_hdf5_dataframe(file_path, extra_file_keys=extra_file_keys)
+    if dataframe is None:
+        dataframe = make_hdf5_dataframe(file_path, extra_file_keys=extra_file_keys)
 
     # make sure it's in there
-    assert interpolate_value in hdf5_df.columns, "Data not in dataframe!"
+    assert interpolate_value in dataframe.columns, "Data not in dataframe!"
 
-    rmax = np.max([np.ceil(np.max(hdf5_df.x)), np.ceil(np.max(hdf5_df.y))])
-    rmin = np.min([np.ceil(np.min(hdf5_df.x)), np.ceil(np.min(hdf5_df.y))])
+    rmax = np.max([np.ceil(np.max(dataframe[xaxis])), np.ceil(np.max(dataframe[yaxis]))])
+    rmin = np.min([np.ceil(np.min(dataframe[xaxis])), np.ceil(np.min(dataframe[yaxis]))])
 
     # make grid of disk
     gr, gphi, gx, gy = make_grids(r_min=rmin, r_max=rmax, num_r=grid_size)
 
     # Interpolate using griddata
     interpolated_grid = griddata(
-        (hdf5_df.x.to_numpy(), hdf5_df.y.to_numpy()),
-        hdf5_df[interpolate_value].to_numpy(),
+        (dataframe[xaxis].to_numpy(), dataframe[yaxis].to_numpy()),
+        dataframe[interpolate_value].to_numpy(),
         (gx, gy),
         method="linear",
         fill_value=0.0,
@@ -469,7 +471,7 @@ def calculate_doppler_flip(
     Returns the doppler flip map, the phi velocity field, and the azimuthally averaged vphi
     """
 
-    vphi, grids = make_interpolated_hdf5_grid(
+    vphi, grids = make_interpolated_grid(
         hdf5_df=None,
         grid_size=grid_size,
         interpolate_value="vphi",
