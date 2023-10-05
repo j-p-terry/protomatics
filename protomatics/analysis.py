@@ -418,8 +418,11 @@ def make_interpolated_grid(
     return_grids: bool = False,
     xaxis: str = "x",
     yaxis: str = "y",
+    interpolation_method: str = "linear",
 ) -> Union[np.ndarray, tuple]:
-    """Makes an interpolated grid of a given value in a dataframe"""
+    """Makes an interpolated grid of a given value in a dataframe
+    interpolation_method is ["linear", "nearest", or "cubic"]
+    """
 
     assert (
         dataframe is not None or file_path is not None
@@ -443,7 +446,7 @@ def make_interpolated_grid(
         (dataframe[xaxis].to_numpy(), dataframe[yaxis].to_numpy()),
         dataframe[interpolate_value].to_numpy(),
         (gx, gy),
-        method="linear",
+        method=interpolation_method,
         fill_value=0.0,
     )
     if not return_grids:
