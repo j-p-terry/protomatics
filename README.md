@@ -243,7 +243,7 @@ Please cite the DOI corresponding to the version of $\mathrm{\texttt{ProtoMatics
 If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring to a specific version in your work, please use the persistent DOI: [10.5281/zenodo.8410680](https://doi.org/10.5281/zenodo.8410680).
 
 ### Example citation using version DOI
-```
+```bibtex
 @software{protomatics,
   author       = {Jason P. Terry},
   title        = {ProtoMatics: v0.3.2},
