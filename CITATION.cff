@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it using the following metadata."
+authors:
+  - family-names: "Terry"
+    given-names: "Jason"
+    orcid: "0000-0002-8590-727"
+title: "ProtoMatics"
+version: "All"
+doi: "10.5281/zenodo.8410680"
+date-released: "2023-09-01"
