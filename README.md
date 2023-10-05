@@ -257,7 +257,7 @@ If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring 
 ```
 
 ### Example citation using persistent DOI
-```
+```bibtex
 @software{protomatics,
   author       = {Jason P. Terry},
   title        = {ProtoMatics},
