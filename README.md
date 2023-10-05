@@ -245,7 +245,7 @@ If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring 
 ### Example citation using version DOI
 ```
 @software{protomatics,
-  author       = {Jason Terry},
+  author       = {Jason P. Terry},
   title        = {ProtoMatics: v0.3.2},
   month        = oct,
   year         = 2023,
@@ -259,7 +259,7 @@ If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring 
 ### Example citation using persistent DOI
 ```
 @software{protomatics,
-  author       = {Jason Terry},
+  author       = {Jason P. Terry},
   title        = {ProtoMatics},
   month        = sep,
   year         = 2023,
