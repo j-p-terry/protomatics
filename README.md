@@ -198,20 +198,21 @@ $\mathrm{\texttt{dataframe}}$ can be None, but then $\mathrm{\texttt{file-path}}
 
 This is all put together to calculate the Doppler flip with
 
-```pyton
-pm.calculate_doppler_flip(hdf5_path,
-                        grid_size=height_of_grid_in_pixels,
-                        interpolate_value=value_to_use,
-                        file_path=path_to_hd5f_file,
-                        extra_file_keys=None,
-                        return_grids=False,
-                        plot=whether_to_plot,
-                        save_plot=whether_to_save_plot,
-                        show_plot=whether_to_show_plot,
-                        xlabel=plot_xlabel,
-                        ylabel=plot_ylabel,
-                        vmin=plot_minimum_value,
-                        vmax=plot_maximum_value,
+```python
+pm.calculate_doppler_flip(
+    hdf5_path,
+    grid_size=height_of_grid_in_pixels,
+    interpolate_value=value_to_use,
+    file_path=path_to_hd5f_file,
+    extra_file_keys=None,
+    return_grids=False,
+    plot=whether_to_plot,
+    save_plot=whether_to_save_plot,
+    show_plot=whether_to_show_plot,
+    xlabel=plot_xlabel,
+    ylabel=plot_ylabel,
+    vmin=plot_minimum_value,
+    vmax=plot_maximum_value,
 )
 ```
 
@@ -242,7 +243,7 @@ Please cite the DOI corresponding to the version of $\mathrm{\texttt{ProtoMatics
 If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring to a specific version in your work, please use the persistent DOI: [10.5281/zenodo.8410680](https://doi.org/10.5281/zenodo.8410680).
 
 ### Example citation using version DOI
-<blockquote>
+```
 @software{protomatics,
   author       = {Jason Terry},
   title        = {ProtoMatics: v0.3.2},
@@ -253,10 +254,10 @@ If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring 
   doi          = {10.5281/zenodo.8410681},
   url          = {https://doi.org/10.5281/zenodo.8410681}
 }
-</blockquote>
+```
 
 ### Example citation using persistent DOI
-<blockquote>
+```
 @software{protomatics,
   author       = {Jason Terry},
   title        = {ProtoMatics},
@@ -266,4 +267,4 @@ If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring 
   doi          = {10.5281/zenodo.8410680},
   url          = {https://doi.org/10.5281/zenodo.8410680}
 }
-</blockquote>
+```
