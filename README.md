@@ -237,7 +237,7 @@ Other functionality is quickly being added. Please report any bugs. More substan
 ## Citing ProtoMatics
 
 ### To Cite a Specific Version:
-Please cite the DOI corresponding to the version of $\mathrm{\texttt{ProtoMatics}}$ you used, ensuring that future researchers can access the exact version you utilized. The DOIs for each version can be found in the [Zenodo archive](https://zenodo.org/record/8410681).
+Please cite the DOI corresponding to the version of $\mathrm{\texttt{ProtoMatics}}$ you used, ensuring that future researchers can access the exact version you utilized. The DOIs for each version can be found in the [Zenodo archive](https://zenodo.org/record/8410680).
 
 ### To Cite [Your Software Name] Generally:
 If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring to a specific version in your work, please use the persistent DOI: [10.5281/zenodo.8410680](https://doi.org/10.5281/zenodo.8410680).
