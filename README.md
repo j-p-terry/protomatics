@@ -4,7 +4,8 @@
   <!-- <a href="https://app.circleci.com/pipelines/github/j-p-terry/non_keplerian_anomaly_detection"><img alt="Build" src="https://shields.api-test.nl/circleci/build/github/j-p-terry/non_keplerian_anomaly_detection?style=for-the-badge&token=4bae0fb820e3e7d4ec2352639e35d499c673d78c"></a> -->
   <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/-Python 3.9+-blue?style=for-the-badge&logo=python&logoColor=white"></a>
   <!-- <a href="https://black.readthedocs.io/en/stable/"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-black.svg?style=for-the-badge&labelColor=gray"></a> -->
-  <a href="https://doi.org/10.5281/zenodo.8410680"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.8410680.svg" alt="DOI"></a>
+  <!-- <a href="https://doi.org/10.5281/zenodo.8410680"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.8410680.svg" alt="DOI"></a> -->
+  <a href="https://zenodo.org/record/8410681"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.8410680-blue?style=for-the-badge&logo=Zenodo&logoColor=white" alt="DOI - 10.5281/zenodo.8410680"></a>
 </h1>
 
 ProtoMatics is a python package to analyze and visualize protoplanetary disk data, particularly in the context of kinematics. It can calculate moment maps, extract velocity channels, visualize fits files (e.g. line emission data), and calculate other quantities of interest. It is mainly designed to be used as a helper in larger analysis scripts.
@@ -235,12 +236,13 @@ Other functionality is quickly being added. Please report any bugs. More substan
 ## Citing ProtoMatics
 
 ### To Cite a Specific Version:
-Please cite the DOI corresponding to the version of $\mathrm{\texttt{ProtoMatics}}$you used, ensuring that future researchers can access the exact version you utilized. The DOIs for each version can be found in the [Zenodo archive](https://zenodo.org/record/8410681).
+Please cite the DOI corresponding to the version of $\mathrm{\texttt{ProtoMatics}}$ you used, ensuring that future researchers can access the exact version you utilized. The DOIs for each version can be found in the [Zenodo archive](https://zenodo.org/record/8410681).
 
 ### To Cite [Your Software Name] Generally:
-If you are discussing [Your Software Name] broadly and not referring to a specific version in your work, please use the persistent DOI: [DOI](https://doi.org/10.5281/zenodo.8410680).
+If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring to a specific version in your work, please use the persistent DOI: [10.5281/zenodo.8410680](https://doi.org/10.5281/zenodo.8410680).
 
 ### Example citation using version DOI
+<blockquote>
 @software{protomatics,
   author       = {Jason Terry},
   title        = {ProtoMatics: v0.3.2},
@@ -251,8 +253,10 @@ If you are discussing [Your Software Name] broadly and not referring to a specif
   doi          = {10.5281/zenodo.8410681},
   url          = {https://doi.org/10.5281/zenodo.8410681}
 }
+</blockquote>
 
 ### Example citation using persistent DOI
+<blockquote>
 @software{protomatics,
   author       = {Jason Terry},
   title        = {ProtoMatics},
@@ -262,3 +266,4 @@ If you are discussing [Your Software Name] broadly and not referring to a specif
   doi          = {10.5281/zenodo.8410680},
   url          = {https://doi.org/10.5281/zenodo.8410680}
 }
+</blockquote>
