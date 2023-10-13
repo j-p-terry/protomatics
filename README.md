@@ -263,8 +263,8 @@ If you are discussing $\mathrm{\texttt{ProtoMatics}}$ broadly and not referring 
   title        = {ProtoMatics},
   month        = sep,
   year         = 2023,
-  publisher    = {Zenodo},
+  publisher    = {PyPi},
   doi          = {10.5281/zenodo.8410680},
-  url          = {https://doi.org/10.5281/zenodo.8410680}
+  url          = {https://pypi.org/project/protomatics/}
 }
 ```
