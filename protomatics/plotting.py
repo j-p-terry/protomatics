@@ -681,7 +681,7 @@ def plot_series(
 
     if scatter and len(scatter_colors) > 0:
         norm = plt.Normalize(min_value, max_value)
-        sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+        sm = plt.cm.ScalarMappable(norm=norm, cmap=scatter_cmap)
         ax = plt.gca()
         cbar = plt.colorbar(sm, ax=ax, fraction=0.045, pad=0.005)
         cbar.ax.set_ylabel(scatter_cbar_label, rotation=270, fontsize=legend_font)
