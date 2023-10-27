@@ -1,6 +1,7 @@
 import sys
 from os.path import abspath, dirname
 
+import numpy as np
 import pytest
 from astropy.io import fits
 
@@ -11,6 +12,7 @@ from protomatics.moments import make_moments
 from protomatics.plotting import (
     get_wiggle_from_contour,
     plot_polar_and_get_contour,
+    plot_series,
     plot_wcs_data,
     polar_plot,
 )
@@ -45,9 +47,13 @@ def test_wcs_plot(fits_name):
     print("Plotting with maximum values")
     plot_wcs_data(hdu, vmax=0.8, vmin=0.2, show=False, interpolation="bicubic")
 
-    # with additional options
+    # with log cmap
     print("Plotting with log norm")
     plot_wcs_data(hdu, vmax=0.8, vmin=0.2, log=True, show=False)
+
+    # with symlog cmap
+    print("Plotting with symlog norm")
+    plot_wcs_data(hdu, vmax=0.8, vmin=0.2, symlog=True, show=False)
 
     if "cube" in fits_name:
         overlay_hdu = fits.open("./tests/data/test_2d.fits")
@@ -90,5 +96,52 @@ def test_wiggle_plots(fits_name):
 
     print("Plotting wiggle")
     polar_plot(rs, phis, show=False, scatter=False)
+
+    print("Passed!")
+
+
+@pytest.mark.parametrize("scatter", [False, True])
+def test_series_plots(scatter):
+    """Tests wiggle extraction and plotting"""
+
+    print(f"Testing series plots with scattering: {scatter}")
+
+    data_len = 10
+    num_vars = 3
+    xs = {i: np.random.randn(data_len) for i in range(num_vars)}
+    ys = {i: np.random.randn(data_len) for i in range(num_vars)}
+    plot_labels = {i: f"{i}" for i in range(num_vars)}
+    vlines = {i: np.random.randint(0, high=10, size=1) for i in range(num_vars)}
+    hlines = {i: np.random.randint(0, high=10, size=1) for i in range(num_vars)}
+
+    if scatter:
+        cs = {i: np.random.randn(data_len) for i in range(num_vars)}
+        cbar_label = "foo"
+
+    print("Plotting")
+    plot_series(
+        xs,
+        ys,
+        scatter=scatter,
+        scatter_colors={} if not scatter else cs,
+        cbar_label="" if not scatter else cbar_label,
+        show=False,
+        vlines=vlines,
+        hlines=hlines,
+        plot_labels=plot_labels,
+    )
+
+    if scatter:
+        print("Plotting scatter without coloring")
+        plot_series(
+            xs,
+            ys,
+            scatter=scatter,
+            scatter_colors={},
+            show=False,
+            vlines=vlines,
+            hlines=hlines,
+            plot_labels=plot_labels,
+        )
 
     print("Passed!")

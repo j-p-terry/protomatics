@@ -2,6 +2,7 @@ import warnings
 from typing import Optional
 
 import matplotlib
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
@@ -9,7 +10,7 @@ from astropy.visualization.wcsaxes import WCSAxes
 from astropy.wcs import WCS
 from matplotlib import colormaps as mplcm
 from matplotlib import rc as mplrc
-from matplotlib.colors import ListedColormap, LogNorm
+from matplotlib.colors import ListedColormap, LogNorm, SymLogNorm
 from matplotlib.patches import Ellipse
 
 ##############################################################
@@ -110,6 +111,8 @@ def plot_wcs_data(
     subtract_overlay_channels: Optional[list] = None,
     num_ticks: int = 5,
     log: bool = False,
+    symlog: bool = False,
+    symlog_linthresh: float = -0.1,
     scale_data: float = 1.0,
     overlay_data_scale: float = 1.0,
     plot_cmap: str = "magma",
@@ -192,6 +195,16 @@ def plot_wcs_data(
 
     # make a log normalizer
     norm = LogNorm(vmin, vmax) if log else None
+    # do a symmetric log normalizer with a linear threshold as a fraction (if < 0) or given value (> 0)
+    norm = (
+        norm
+        if not symlog
+        else SymLogNorm(
+            abs(symlog_linthresh) * vmax if symlog_linthresh < 0 else symlog_linthresh,
+            vmin=vmin,
+            vmax=vmax,
+        )
+    )
 
     # plot
     if log:
@@ -559,6 +572,130 @@ def basic_image_plot(
     if save:
         plt.savefig(save_name)
 
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+
+def plot_series(
+    xs: dict,
+    ys: dict,
+    plot_labels: dict = {},
+    x_label: str = "",
+    y_label: str = "",
+    scatter: bool = False,
+    scatter_colors: dict = {},
+    scatter_cbar_label: str = "",
+    save: bool = False,
+    savename: str = "",
+    show: bool = True,
+    logx: bool = False,
+    logy: bool = False,
+    vlines: dict = {},
+    hlines: dict = {},
+    ncols: int = 1,
+    **kwargs,
+) -> None:
+    """
+    Plots a series of lines; x, y are dictionaries with corresponding entries in plot_labels (not present = no labels)
+    kwargs[color_list] overrides the default color scheme
+    kwargs[scatter_color_list] overrides the default colors and makes the scatter points colored by that value
+    other kwargs can override the default fonts
+    """
+
+    # get font information if given
+    label_font = kwargs.get("label_font", labels)
+    tick_font = kwargs.get("tick_font", ticks)
+    legend_font = kwargs.get("legend_font", legends)
+    # override default figure size
+    figsize = kwargs.get("figsize", (14.0, 10.5))
+    # override default colormaps
+    color_list = kwargs.get("color_list", colors)
+    scatter_cmap = kwargs.get("scatter_cmap", cmap)
+
+    plt.figure(figsize=figsize)
+
+    i = 0
+    min_value = 1e30
+    max_value = -1e30
+    for var in xs:
+        # adds a random color if we haven't given enough
+        if i > len(color_list):
+            other_colors = mcolors.CSS4_COLORS
+            rand_color_index = np.random.randint(0, high=len(other_colors))
+            this_color = list(mcolors.CSS4_COLORS.values())[rand_color_index]
+            color_list.append(this_color)
+
+        if not scatter:
+            plt.plot(
+                xs[var],
+                ys[var],
+                lw=lw,
+                color=color_list[i],
+                label=None if var not in plot_labels else plot_labels[var],
+            )
+        else:
+            if len(scatter_colors) == 0:
+                plt.scatter(
+                    xs[var],
+                    ys[var],
+                    s=s,
+                    label=None if var not in plot_labels else plot_labels[var],
+                    color=color_list[i],
+                )
+            else:
+                plt.scatter(
+                    xs[var],
+                    ys[var],
+                    s=s,
+                    label=None if var not in plot_labels else plot_labels[var],
+                    c=scatter_colors[var] if var in scatter_colors else color_list[i],
+                    cmap=scatter_cmap,
+                )
+
+                if var in scatter_colors:
+                    if np.min(scatter_colors[var]) < min_value:
+                        min_value = np.min(scatter_colors[var])
+
+                    if np.max(scatter_colors[var]) > max_value:
+                        max_value = np.max(scatter_colors[var])
+
+        i += 1
+
+    if len(vlines) > 0:
+        for name in vlines:
+            plt.axvline(vlines[name], lw=lw, ls="--", c="gray", label=name)
+
+    if len(hlines) > 0:
+        for name in hlines:
+            plt.axvline(hlines[name], lw=lw, ls=":", c="k", label=name)
+
+    if logx:
+        plt.xscale("log")
+    if logy:
+        plt.yscale("log")
+
+    if len(plot_labels) > 0:
+        plt.legend(loc="best", fontsize=legend_font, ncols=ncols)
+
+    if scatter and len(scatter_colors) > 0:
+        norm = plt.Normalize(min_value, max_value)
+        sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+        ax = plt.gca()
+        cbar = plt.colorbar(sm, ax=ax, fraction=0.045, pad=0.005)
+        cbar.ax.set_ylabel(scatter_cbar_label, rotation=270, fontsize=legend_font)
+        cbar.ax.tick_params(labelsize=tick_font)
+        cbar.ax.get_yaxis().labelpad = 40
+
+    plt.xticks(fontsize=tick_font)
+    plt.yticks(fontsize=tick_font)
+
+    plt.xlabel(x_label, fontsize=label_font)
+    plt.ylabel(y_label, fontsize=label_font)
+
+    if save:
+        plt.savefig(savename)
     if show:
         plt.show()
     else:
