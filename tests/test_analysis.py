@@ -112,6 +112,10 @@ def test_wiggle_amplitude(fits_name):
         rs, phis, ref_rs=rs, ref_phis=phis, vel_is_zero=False, use_std_as_amp=True
     )
 
+    # calculate with rotation
+    kep_moment1 = calculate_keplerian_moment1(hdu=fits.open(path), rotate=0.785)
+
+    # calculate without rotation
     kep_moment1 = calculate_keplerian_moment1(hdu=fits.open(path))
 
     kep_rs, kep_phis = extract_wiggle(kep_moment1, in_pv_space=False)

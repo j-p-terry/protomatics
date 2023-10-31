@@ -171,6 +171,7 @@ def mask_keplerian_velocity(
     num_r: Optional[int] = None,
     M_star: float = 1.0,
     inc: float = 20.0,
+    rotate: float = 1.0,
 ) -> tuple:
     """
     This function creates two new data cubes: one with the velocities within some tolerance of the keplerian
@@ -199,6 +200,7 @@ def mask_keplerian_velocity(
         M_star=M_star,
         distance=distance,
         inc=inc,
+        rotate=rotate,
     )
 
     # mask the data that's inside the keplerian tolerance

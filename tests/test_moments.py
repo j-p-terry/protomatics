@@ -35,6 +35,12 @@ def test_moment_and_wiggle(fits_name):
     print("Plotting moments with keplerian subtraction")
     plot_moments(calc_moments=calc_moments, fits_path=path, show=False, sub_kep_moment=True)
 
+    # test keplerian subtraction with rotation
+    print("Plotting moments with keplerian subtraction")
+    plot_moments(
+        calc_moments=calc_moments, fits_path=path, show=False, sub_kep_moment=True, rotate=0.785
+    )
+
     # test with loading
     print("Plotting moments with no data loaded")
     plot_moments(fits_path=path, show=False)

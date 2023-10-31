@@ -53,6 +53,7 @@ def calculate_keplerian_moment1(
     inc: float = 20.0,
     distance: float = 200.0,
     hdu: Optional[list] = None,
+    rotate: float = 0.0,
 ) -> np.ndarray:
     """
     This calculates the moment-1 map of a Keplerian disk with
@@ -71,6 +72,9 @@ def calculate_keplerian_moment1(
         num_r=num_r,
         distance=distance,
     )
+
+    # add rotation to azimuth (default = 0)
+    gphi += rotate
 
     # calculate Keplerian moment
     moment1 = (
@@ -183,6 +187,7 @@ def make_masked_moments(
     M_star: float = 1.0,
     inc: float = 20.0,
     save_moments: bool = False,
+    rotate: float = 1.0,
 ) -> tuple:
     """This gets the Keplerian and non-Keplerian components of the data and calculates moments"""
 
@@ -200,6 +205,7 @@ def make_masked_moments(
         num_r=num_r,
         r_min=r_min,
         r_max=r_max,
+        rotate=rotate,
     )
 
     # estimate RMS
@@ -253,6 +259,7 @@ def plot_moments(
     scale_data: float = 1.0,
     scale_kep_data: float = 1.0,
     mask_values: Optional[dict] = None,
+    rotate: float = 1.0,
     **kwargs,
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
@@ -276,7 +283,14 @@ def plot_moments(
         if sub_kep_moment and moment == 1:
             # calculate a keplerian moment-1 map to match
             kep_moment = calculate_keplerian_moment1(
-                0.0, 0.0, 0.0, M_star=M_star, inc=inc, distance=distance, hdu=hdu
+                0.0,
+                0.0,
+                0.0,
+                M_star=M_star,
+                inc=inc,
+                distance=distance,
+                hdu=hdu,
+                rotate=rotate,
             )
 
         vmax = (None if moment not in vmaxes else vmaxes[moment]) if vmaxes is not None else None
