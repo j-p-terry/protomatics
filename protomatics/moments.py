@@ -252,6 +252,7 @@ def plot_moments(
     vmins: Optional[dict] = None,
     scale_data: float = 1.0,
     scale_kep_data: float = 1.0,
+    mask_values: Optional[dict] = None,
     **kwargs,
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
@@ -283,6 +284,10 @@ def plot_moments(
 
         vmax = vel_max if moment == 1 and vel_max is not None else vmax
         vmin = vel_min if moment == 1 and vel_min is not None else vmin
+
+        # mask a range of low values to 0 (helpful for delta Keplerian)
+        if mask_values[moment] is not None:
+            calc_moments[moment][np.abs(calc_moments[moment]) < mask_values[moment]] = 0.0
 
         plot_wcs_data(
             hdu,
