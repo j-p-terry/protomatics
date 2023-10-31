@@ -300,12 +300,10 @@ def plot_moments(
         vmin = vel_min if moment == 1 and vel_min is not None else vmin
 
         # mask a range of low values to 0 (helpful for delta Keplerian)
-        if (
-            type(mask_values) is dict
-            and moment in mask_values
-            and mask_values[moment] is not None
-        ):
-            calc_moments[moment][np.abs(calc_moments[moment]) < mask_values[moment]] = 0.0
+        if mask_values is None or (type(mask_values) == dict and moment not in mask_values):
+            mask_value = None
+        else:
+            mask_value = mask_values[moment]
 
         plot_wcs_data(
             hdu,
@@ -319,7 +317,7 @@ def plot_moments(
             plot_cmap="RdBu_r" if moment % 2 == 1 else "magma",
             plot_units=moment_units[moment],
             show=show,
-            **kwargs,
+            mask_value=mask_value**kwargs,
         )
 
 

@@ -109,6 +109,7 @@ def plot_wcs_data(
     subtract_data: Optional[np.ndarray] = None,
     subtract_channels: Optional[list] = None,
     subtract_overlay_channels: Optional[list] = None,
+    mask_value: Optional[float] = None,
     num_ticks: int = 5,
     log: bool = False,
     symlog: bool = False,
@@ -192,6 +193,10 @@ def plot_wcs_data(
     if subtract_data is not None:
         plot_data = plot_data.copy()
         plot_data -= subtract_data
+
+    # masks an inner region to 0 (helpful for delta Keplerian)
+    if mask_value is not None:
+        plot_data[np.abs(plot_data) <= mask_value] = 0.0
 
     # make a log normalizer
     norm = LogNorm(vmin, vmax) if log else None
