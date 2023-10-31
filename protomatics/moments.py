@@ -187,7 +187,7 @@ def make_masked_moments(
     M_star: float = 1.0,
     inc: float = 20.0,
     save_moments: bool = False,
-    rotate: float = 1.0,
+    rotate: float = 0.0,
 ) -> tuple:
     """This gets the Keplerian and non-Keplerian components of the data and calculates moments"""
 
@@ -259,7 +259,7 @@ def plot_moments(
     scale_data: float = 1.0,
     scale_kep_data: float = 1.0,
     mask_values: Optional[dict] = None,
-    rotate: float = 1.0,
+    rotate: float = 0.0,
     **kwargs,
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
