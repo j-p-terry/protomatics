@@ -300,7 +300,11 @@ def plot_moments(
         vmin = vel_min if moment == 1 and vel_min is not None else vmin
 
         # mask a range of low values to 0 (helpful for delta Keplerian)
-        if mask_values[moment] is not None:
+        if (
+            type(mask_values) is dict
+            and moment in mask_values
+            and mask_values[moment] is not None
+        ):
             calc_moments[moment][np.abs(calc_moments[moment]) < mask_values[moment]] = 0.0
 
         plot_wcs_data(
