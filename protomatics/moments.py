@@ -317,7 +317,8 @@ def plot_moments(
             plot_cmap="RdBu_r" if moment % 2 == 1 else "magma",
             plot_units=moment_units[moment],
             show=show,
-            mask_value=mask_value**kwargs,
+            mask_value=mask_value,
+            **kwargs,
         )
 
 
