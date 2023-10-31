@@ -244,6 +244,8 @@ def plot_moments(
     show: bool = True,
     vmaxes: Optional[dict] = None,
     vmins: Optional[dict] = None,
+    scale_data: float = 1.0,
+    scale_kep_data: float = 1.0,
     **kwargs,
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
@@ -278,11 +280,11 @@ def plot_moments(
 
         plot_wcs_data(
             hdu,
-            plot_data=calc_moments[moment],
+            plot_data=calc_moments[moment] * scale_data,
             contour_value=0 if plot_zero else None,
             save=save,
             save_name=save_name,
-            subtract_data=kep_moment if sub_kep_moment and moment == 1 else None,
+            subtract_data=kep_moment * scale_kep_data if sub_kep_moment and moment == 1 else None,
             vmin=vmin,
             vmax=vmax,
             plot_cmap="RdBu_r" if moment % 2 == 1 else "magma",
