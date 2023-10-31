@@ -6,6 +6,7 @@ import scipy
 from astropy.io import fits
 
 from .constants import G, Msol_kg, au
+from .helpers import get_vels_from_freq
 from .plotting import get_wiggle_from_contour, plot_polar_and_get_contour, plot_wcs_data
 
 ##############################################################
@@ -89,6 +90,11 @@ def prepare_moment_data(
     """Prepares data for making moments"""
 
     data, velax = bm.load_cube(fits_path)
+
+    # convert to km/s if it's in Hz
+    hdu = fits.open(fits_path)
+    if "CUNIT3" in hdu[0].header and "Hz" in hdu[0].header["CUNIT3"]:
+        velax = get_vels_from_freq(hdu, relative=True, syst_chan=hdu[0].header["CRPIX3"])
 
     # subtract continuum
     if sub_cont:
