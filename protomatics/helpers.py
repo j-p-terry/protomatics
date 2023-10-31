@@ -20,7 +20,7 @@ def get_vels_from_freq(hdr, relative: bool = True, syst_chan: int = 100):
     delta_f = hdr["CDELT3"]
     center = int(hdr["CRPIX3"])
     num_freq = int(hdr["NAXIS3"])
-    freqs = [f0 + delta_f * (i - center) for i in range(center, num_freq)]
+    freqs = [f0 + delta_f * (i - center) for i in range(num_freq)]
     vels = np.array([-c_kms * (f - f0) / f0 for f in freqs])
     if relative:
         vels -= vels[syst_chan]
