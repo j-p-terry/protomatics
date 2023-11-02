@@ -13,7 +13,7 @@ def normalize_array(arr: np.ndarray) -> np.ndarray:
     return (x - np.min(x)) / np.max(x - np.min(x))
 
 
-def get_vels_from_freq(hdr, relative: bool = True, syst_chan: int = 100):
+def get_vels_from_freq(hdr, relative: bool = True, syst_chan: int = 0):
     """Gets velocities from a fits header using frequency as units"""
 
     f0 = hdr["CRVAL3"]
