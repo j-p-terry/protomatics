@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy as np
 
@@ -23,6 +24,9 @@ def get_vels_from_freq(hdr, relative: bool = True, syst_chan: int = 0):
     freqs = [f0 + delta_f * (i - center) for i in range(num_freq)]
     vels = np.array([-c_kms * (f - f0) / f0 for f in freqs])
     if relative:
+        if syst_chan > len(vels) - 1:
+            warnings.warn("Systemic channel is too high; using middle channel", stacklevel=2)
+            syst_chan = len(vels) // 2
         vels -= vels[syst_chan]
 
     return vels
