@@ -260,6 +260,7 @@ def plot_moments(
     scale_kep_data: float = 1.0,
     mask_values: Optional[dict] = None,
     rotate: float = 0.0,
+    return_moments: bool = False,
     **kwargs,
 ) -> None:
     assert calc_moments is not None or fits_path is not None, "Nothing to plot!"
@@ -296,9 +297,6 @@ def plot_moments(
         vmax = (None if moment not in vmaxes else vmaxes[moment]) if vmaxes is not None else None
         vmin = (None if moment not in vmins else vmins[moment]) if vmins is not None else None
 
-        vmax = vel_max if moment == 1 and vel_max is not None else vmax
-        vmin = vel_min if moment == 1 and vel_min is not None else vmin
-
         # mask a range of low values to 0 (helpful for delta Keplerian)
         if mask_values is None or (type(mask_values) == dict and moment not in mask_values):
             mask_value = None
@@ -320,6 +318,10 @@ def plot_moments(
             mask_value=mask_value,
             **kwargs,
         )
+
+    if return_moments:
+        return calc_moments
+    return None
 
 
 def get_pv_curve(
