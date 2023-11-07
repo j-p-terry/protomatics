@@ -55,6 +55,19 @@ def test_wcs_plot(fits_name):
     print("Plotting with symlog norm")
     plot_wcs_data(hdu, vmax=0.8, vmin=0.2, symlog=True, show=False)
 
+    # with text
+    print("Plotting with text")
+    plot_wcs_data(
+        hdu,
+        vmax=0.8,
+        vmin=0.2,
+        log=True,
+        show=False,
+        plot_text="foo",
+        plot_text_xy=(1, 1),
+        plot_text_color="red",
+    )
+
     if "cube" in fits_name:
         overlay_hdu = fits.open("./tests/data/test_2d.fits")
     else:
