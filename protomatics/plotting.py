@@ -127,6 +127,9 @@ def plot_wcs_data(
     show: bool = True,
     num_levels: Optional[int] = None,
     interpolation: str = "none",
+    plot_text: Optional[str] = None,
+    plot_text_xy: Optional[tuple] = None,
+    plot_text_color: str = "white",
     **kwargs,
 ) -> None:
     """
@@ -144,6 +147,7 @@ def plot_wcs_data(
     label_font = kwargs.get("label_font", labels)
     tick_font = kwargs.get("tick_font", ticks)
     legend_font = kwargs.get("legend_font", legends)
+    text_font = kwargs.get("text_font", labels)
     # override default figure size
     figsize = kwargs.get("figsize", (14.0, 10.5))
     # override default colormaps
@@ -284,6 +288,10 @@ def plot_wcs_data(
                 levels=num_levels,
                 alpha=overlay_alpha,
             )
+
+    # add an overlaying text
+    if plot_text is not None:
+        plt.text(plot_text_xy[0], plot_text[1], plot_text, fontsize=text_font)
 
     # set axis labels
     y_label = r"$\Delta$ DEC"
