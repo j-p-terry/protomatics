@@ -63,8 +63,7 @@ def test_wcs_plot(fits_name):
         vmin=0.2,
         log=True,
         show=False,
-        plot_text="foo",
-        plot_text_xy=(1, 1),
+        plot_text={"foo": (1, 2), "bar": (3, 4)},
         plot_text_color="red",
     )
 

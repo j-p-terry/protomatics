@@ -127,8 +127,7 @@ def plot_wcs_data(
     show: bool = True,
     num_levels: Optional[int] = None,
     interpolation: str = "none",
-    plot_text: Optional[str] = None,
-    plot_text_xy: Optional[tuple] = None,
+    plot_text: Optional[dict] = None,
     plot_text_color: str = "white",
     **kwargs,
 ) -> None:
@@ -289,9 +288,16 @@ def plot_wcs_data(
                 alpha=overlay_alpha,
             )
 
-    # add an overlaying text
+    # add an overlaying text (dictionary [text] -> (x, y))
     if plot_text is not None:
-        plt.text(plot_text_xy[0], plot_text[1], plot_text, fontsize=text_font)
+        for text in plot_text:
+            plt.text(
+                plot_text[text][0],
+                plot_text[text][1],
+                text,
+                color=plot_text_color,
+                fontsize=text_font,
+            )
 
     # set axis labels
     y_label = r"$\Delta$ DEC"
