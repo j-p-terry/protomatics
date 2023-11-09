@@ -688,7 +688,7 @@ def plot_series(
 
     if len(hlines) > 0:
         for name in hlines:
-            plt.axvline(hlines[name], lw=lw, ls=":", c="k", label=name)
+            plt.axhline(hlines[name], lw=lw, ls=":", c="k", label=name)
 
     if logx:
         plt.xscale("log")
