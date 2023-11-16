@@ -496,15 +496,14 @@ def get_Q_toomre(
     dataframe = dataframe[np.abs(dataframe["r"] - r_annulus) <= dr]
 
     # get relevant azimuths
-    # phis = np.unique(dataframe["phi"]) if az_avg else np.array([phi])
     # azimuthal average just gets every angle
     if az_avg:
         dphi = 2.0 * np.pi
+        phi_df = dataframe
+    else:
+        phi_df = dataframe[np.abs(dataframe["phi"] - phi) <= dphi]
 
     # find mass within annulus
-    M = 0.0
-    phi_df = dataframe[np.abs(dataframe["phi"] - phi) <= dphi]
-    # add to mass of annulus
     M = np.sum(phi_df[mass_key])
     # internal energy for each particle
     ui_s = phi_df["u"].to_numpy()
@@ -528,6 +527,7 @@ def get_Q_toomre(
 
     # get surface density
     sigma = M / ((r_annulus + 0.5 * dr) ** 2 - (r_annulus - 0.5 * dr) ** 2)
+    # account for azimuthal area contribution
     sigma /= dphi / 2.0
 
     # read in the star mass if it's there
