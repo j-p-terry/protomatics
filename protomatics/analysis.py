@@ -484,7 +484,7 @@ def get_Q_toomre(
     mass_key: str = "massoftype_0",
     az_avg: bool = False,
     m_star: Optional[float] = 1.0,
-    code_units: Optional[dict] = None,
+    code_units: dict = {},
     G: float = 1.0,
 ) -> tuple:
     """Gets Toomre Q at a given r, phi. Can optionally do azimuthal average
