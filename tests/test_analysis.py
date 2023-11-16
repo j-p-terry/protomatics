@@ -11,6 +11,8 @@ from protomatics.analysis import (
     calc_azimuthal_average,
     calculate_doppler_flip,
     calculate_fourier_amps,
+    get_code_units,
+    get_Q_toomre,
     get_wiggle_amplitude,
     make_ev_dataframe,
     make_grids,
@@ -143,6 +145,37 @@ def test_hdf5(hdf5_name):
     hdf5_df = make_hdf5_dataframe(
         path,
         extra_file_keys=["h", "dt", "eta_AD", "Bxyz"],
+    )
+    print("Loading with sink/header information")
+    hdf5_df = make_hdf5_dataframe(
+        path,
+        extra_file_keys=["m", "massoftype", "u"],
+    )
+
+    print("Testing Toomre Q")
+    code_units = get_code_units(path, extra_values=["gamma"])
+    udist = code_units["udist"]
+    umass = code_units["umass"]
+    utime = code_units["utime"]
+    code_units["uG"] = udist**3 / (umass * utime**2)
+    code_units["uenergy"] = umass * (udist / utime) ** 2
+    r_annulus = 25.0
+
+    print("Testing Q at (r, phi)")
+    _ = get_Q_toomre(
+        hdf5_df,
+        r_annulus,
+        gamma=code_units["gamma"],
+        code_units=code_units,
+    )
+
+    print("Testing azimuthal average Q at (r)")
+    _ = get_Q_toomre(
+        hdf5_df,
+        r_annulus,
+        gamma=code_units["gamma"],
+        code_units=code_units,
+        az_avg=True,
     )
 
     print("Testing grid with loaded frame")

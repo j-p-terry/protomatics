@@ -388,8 +388,26 @@ def make_hdf5_dataframe(
     # add any extra information if you want and can
     if extra_file_keys is not None:
         for key in extra_file_keys:
+            # don't get a value we've already used
             if key in hdf5_df.columns:
                 continue
+            # can also grab sink information
+            if key in file["sinks"] and key not in file["particles"].keys():
+                for i in range(len(file[f"sinks/{key}"])):
+                    # sink values are a scalar, so we repeat over the entire dataframe
+                    hdf5_df[f"{key}_{i}"] = np.repeat(file[f"sinks/{key}"][i], hdf5_df.shape[0])
+                    continue
+            # might be in header
+            elif (
+                key in file["header"]
+                and key not in file["particles"].keys()
+                and key not in hdf5_df.columns
+            ):
+                for i in range(len(file[f"header/{key}"])):
+                    # sink values are a scalar, so we repeat over the entire dataframe
+                    hdf5_df[f"{key}_{i}"] = np.repeat(file[f"header/{key}"][i], hdf5_df.shape[0])
+                    continue
+            # value isn't anywhere
             if key not in file["particles"].keys():
                 continue
             # only add if each entry is a scalar
@@ -456,6 +474,82 @@ def make_interpolated_grid(
     return interpolated_grid, (gr, gphi, gx, gy)
 
 
+def get_Q_toomre(
+    dataframe: pd.DataFrame,
+    r_annulus: float,
+    dr: float = 1.0,
+    phi: float = np.pi / 2.0,
+    dphi: float = np.pi / 10.0,
+    gamma: float = 5.0 / 3.0,
+    mass_key: str = "massoftype_0",
+    az_avg: bool = False,
+    m_star: Optional[float] = 1.0,
+    code_units: Optional[dict] = None,
+    G: float = 1.0,
+) -> tuple:
+    """Gets Toomre Q at a given r, phi. Can optionally do azimuthal average
+    Returns Q along with Sigma and the squared sound speeds.
+    Uses same method as SPLASH
+    """
+
+    # get annulus
+    dataframe = dataframe[np.abs(dataframe["r"] - r_annulus) <= dr]
+
+    # get relevant azimuths
+    # phis = np.unique(dataframe["phi"]) if az_avg else np.array([phi])
+    # azimuthal average just gets every angle
+    if az_avg:
+        dphi = 2.0 * np.pi
+
+    # find mass within annulus
+    M = 0.0
+    phi_df = dataframe[np.abs(dataframe["phi"] - phi) <= dphi]
+    # add to mass of annulus
+    M = np.sum(phi_df[mass_key])
+    # internal energy for each particle
+    ui_s = phi_df["u"].to_numpy()
+    #  convert to CGS
+    if "uenergy" in code_units:
+        ui_s *= code_units["uenergy"]
+    # get squared sound speed for each particle
+    cs_sqs = 2.0 / 3.0 * ui_s.copy() if gamma == 1.0 else (gamma - 1.0) * gamma * ui_s.copy()
+
+    # convert to CGS
+    if "umass" in code_units:
+        M *= code_units["umass"]
+
+    # convert to CGS
+    if "udist" in code_units:
+        r_annulus *= code_units["udist"]
+        dr *= code_units["udist"]
+
+    # get RMS sound speed
+    rms_cs = np.sqrt(np.mean(cs_sqs))
+
+    # get surface density
+    sigma = M / ((r_annulus + 0.5 * dr) ** 2 - (r_annulus - 0.5 * dr) ** 2)
+    sigma /= dphi / 2.0
+
+    # read in the star mass if it's there
+    if "m_0" in dataframe.columns:
+        m_star = np.unique(dataframe["m_0"].to_numpy())[0]
+
+    # convert to CGS
+    if "umass" in code_units:
+        m_star *= code_units["umass"]
+
+    # convert to CGS
+    if "uG" in code_units:
+        G *= code_units["uG"]
+
+    # assume Keplerian frequency
+    omega_kep = np.sqrt(G * m_star / (r_annulus**3.0))
+
+    Q = rms_cs * omega_kep / (np.pi * sigma)
+
+    return Q, sigma, cs_sqs
+
+
 def calculate_doppler_flip(
     hdf5_path: str,
     grid_size: int = 600,
@@ -490,7 +584,7 @@ def calculate_doppler_flip(
     if put_in_kms:
         # read in file
         units = get_code_units(hdf5_path)
-        utime, udist = units[1:]
+        utime, udist = units["utime"], units["udist"]
         uvel = udist / utime
         vphi *= uvel  # cm/s
         avg_vphi_map *= uvel
@@ -516,17 +610,27 @@ def calculate_doppler_flip(
     return doppler_flip, vphi, avg_vphi_map
 
 
-def get_code_units(hdf5_path: str) -> list:
+def get_code_units(hdf5_path: str, extra_values: Optional[tuple] = None) -> dict:
     """Gets the code units from a simulation"""
 
     # read in file
     file = h5py.File(hdf5_path, "r")
 
     umass = file["header/umass"][()]  ## M_sol in grams
-    utime = file["header/utime"][()]
+    utime = file["header/utime"][()]  ## time such that G = 1
     udist = file["header/udist"][()]  ## au in cm
 
-    return [umass, utime, udist]
+    units = {"umass": umass, "udist": udist, "utime": utime}
+
+    if extra_values is None:
+        return units
+
+    # can also get other information (like gamma)
+    for val in extra_values:
+        if val in file["header"]:
+            units[val] = file[f"header/{val}"][()]
+
+    return units
 
 
 def calculate_fourier_amps(
