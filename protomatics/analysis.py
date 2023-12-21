@@ -529,6 +529,7 @@ def get_Q_toomre(
     sigma = M / ((r_annulus + 0.5 * dr) ** 2 - (r_annulus - 0.5 * dr) ** 2)
     # account for azimuthal area contribution
     sigma /= dphi / 2.0
+    # sigma /= np.pi
 
     # read in the star mass if it's there
     if "m_0" in dataframe.columns:
