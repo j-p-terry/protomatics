@@ -242,6 +242,8 @@ def plot_wcs_data(
     if overlay_hdu is not None:
         overlay_hdu[0].header["CRVAL1"] = 0.0
         overlay_hdu[0].header["CRVAL2"] = 0.0
+        overlay_hdu[0].header["CRPIX1"] = overlay_hdu[0].header["NAXIS1"] // 2
+        overlay_hdu[0].header["CRPIX2"] = overlay_hdu[0].header["NAXIS2"] // 2
         overlay_wcs = WCS(overlay_hdu[0].header, naxis=2)
 
         if overlay_data is None:
