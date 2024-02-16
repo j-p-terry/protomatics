@@ -642,7 +642,7 @@ def plot_series(
     max_value = -1e30
     for var in xs:
         # adds a random color if we haven't given enough
-        if i > len(color_list):
+        if i > len(color_list) - 1:
             other_colors = mcolors.CSS4_COLORS
             rand_color_index = np.random.randint(0, high=len(other_colors))
             this_color = list(mcolors.CSS4_COLORS.values())[rand_color_index]
