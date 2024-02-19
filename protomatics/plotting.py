@@ -513,18 +513,35 @@ def polar_plot(
         phis = dict(("", phis))
 
     if scatter:
+        i = 0
         for var in rs:
+            # adds a random color if we haven't given enough
+            if i > len(color_list) - 1:
+                other_colors = mcolors.CSS4_COLORS
+                rand_color_index = np.random.randint(0, high=len(other_colors))
+                this_color = list(mcolors.CSS4_COLORS.values())[rand_color_index]
+                color_list.append(this_color)
+
             plt.scatter(
                 phis[var],
                 rs[var],
                 s=ps / 50.0,
-                color=colors[0],
+                color=color_list[i],
                 marker=markers[0],
                 alpha=0.75,
                 label=plot_labels[var] if var in plot_labels else None,
             )
+            i += 1
     else:
+        i = 0
         for var in rs:
+            # adds a random color if we haven't given enough
+            if i > len(color_list) - 1:
+                other_colors = mcolors.CSS4_COLORS
+                rand_color_index = np.random.randint(0, high=len(other_colors))
+                this_color = list(mcolors.CSS4_COLORS.values())[rand_color_index]
+                color_list.append(this_color)
+
             # split into where the curves are above and below the major axis
             negative = np.where(phis[var] < 0)
             positive = np.where(phis[var] > 0)
@@ -532,7 +549,7 @@ def polar_plot(
                 phis[var][negative],
                 rs[var][negative],
                 lw=linewidth / 2,
-                c=color_list[0],
+                c=color_list[i],
                 ls=lines[0],
                 label=plot_labels[var] if var in plot_labels else None,
             )
@@ -540,9 +557,11 @@ def polar_plot(
                 phis[var][positive],
                 rs[var][positive],
                 lw=linewidth / 2,
-                c=color_list[0],
+                c=color_list[i],
                 ls=lines[0],
             )
+
+            i += 1
 
     if plot_labels != {}:
         plt.legend(loc="best", fontsize=legend_font)
