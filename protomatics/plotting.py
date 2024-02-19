@@ -472,8 +472,9 @@ def get_wiggle_from_contour(
 
 
 def polar_plot(
-    rs: np.ndarray,
-    phis: np.ndarray,
+    rs: dict,
+    phis: dict,
+    plot_labels: Optional[dict] = {},
     rmax: Optional[float] = None,
     scatter: bool = True,
     rlabel_position: float = 300.0,
@@ -494,6 +495,7 @@ def polar_plot(
     # get font information if given
     tick_font = kwargs.get("tick_font", ticks)
     figsize = kwargs.get("figsize", (12.0, 12.0))
+    legend_font = kwargs.get("legend_font", legends)
     # line attributes
     lines = kwargs.get("lines", linestyles)
     linewidth = kwargs.get("linewidth", lw)
@@ -506,21 +508,44 @@ def polar_plot(
 
     _, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": "polar"})
 
+    if type(rs) != dict:
+        rs = dict(("", rs))
+        phis = dict(("", phis))
+
     if scatter:
-        plt.scatter(
-            phis,
-            rs,
-            s=ps / 50.0,
-            color=colors[0],
-            marker=markers[0],
-            alpha=0.75,
-        )
+        for var in rs:
+            plt.scatter(
+                phis[var],
+                rs[var],
+                s=ps / 50.0,
+                color=colors[0],
+                marker=markers[0],
+                alpha=0.75,
+                label=plot_labels[var] if var in plot_labels else None,
+            )
     else:
-        # split into where the curves are above and below the major axis
-        negative = np.where(phis < 0)
-        positive = np.where(phis > 0)
-        plt.plot(phis[negative], rs[negative], lw=linewidth / 2, c=color_list[0], ls=lines[0])
-        plt.plot(phis[positive], rs[positive], lw=linewidth / 2, c=color_list[0], ls=lines[0])
+        for var in rs:
+            # split into where the curves are above and below the major axis
+            negative = np.where(phis[var] < 0)
+            positive = np.where(phis[var] > 0)
+            plt.plot(
+                phis[var][negative],
+                rs[var][negative],
+                lw=linewidth / 2,
+                c=color_list[0],
+                ls=lines[0],
+                label=plot_labels[var] if var in plot_labels else None,
+            )
+            plt.plot(
+                phis[var][positive],
+                rs[var][positive],
+                lw=linewidth / 2,
+                c=color_list[0],
+                ls=lines[0],
+            )
+
+    if plot_labels != {}:
+        plt.legend(loc="best", fontsize=legend_font)
 
     if rmax is None:
         ax.set_rlabel_position(rlabel_position)
