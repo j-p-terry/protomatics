@@ -30,7 +30,7 @@ def get_image_physical_size(
     # angular size of each pixel
     radian_width = np.pi * abs(hdu[0].header["CDELT1"] * hdu[0].header["NAXIS1"]) / 180.0
 
-    # physocal size of each pixel in au
+    # physical size of each pixel in au
     image_size = 2.0 * distance * np.tan(radian_width / 2.0) * au_pc
 
     npix = int(hdu[0].header["NAXIS1"])
