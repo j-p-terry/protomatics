@@ -263,7 +263,7 @@ def get_wiggle_amplitude(
     # can just use the standard deviation of wiggle
     if use_std_as_amp:
         # select right radial range
-        okay = np.where((np.abs(ref_rs) < wiggle_rmax) & (np.abs(ref_rs) > rmin))
+        okay = np.where((np.abs(rs) < wiggle_rmax) & (np.abs(rs) > rmin))
         used_phis = phis[okay]
         used_rs = rs[okay]
         used_ref_phis = ref_phis[okay]
