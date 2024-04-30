@@ -8,9 +8,10 @@ import numpy as np
 from astropy.io import fits
 from astropy.visualization.wcsaxes import WCSAxes
 from astropy.wcs import WCS
+from colorspacious import cspace_converter
 from matplotlib import colormaps as mplcm
 from matplotlib import rc as mplrc
-from matplotlib.colors import ListedColormap, LogNorm, SymLogNorm
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, LogNorm, SymLogNorm
 from matplotlib.patches import Ellipse
 
 ##############################################################
@@ -765,3 +766,36 @@ def plot_series(
         plt.show()
     else:
         plt.close()
+
+
+def hex_to_rgb(value):
+    """Convert hex to RGB values in the range [0, 1]."""
+    value = value.lstrip("#")
+    lv = len(value)
+    return tuple(int(value[i : i + lv // 3], 16) / 255.0 for i in range(0, lv, lv // 3))
+
+
+def create_perceptually_uniform_cmap(start_color: list, end_color: list, N: int = 256):
+    if type(start_color) is str:
+        start_color = (
+            hex_to_rgb(start_color) if "#" in start_color else mcolors.to_rgb(start_color)
+        )
+    if type(end_color) is str:
+        end_color = hex_to_rgb(end_color) if "#" in end_color else mcolors.to_rgb(end_color)
+    # Convert the start and end colors from RGB to LAB color space
+    converter = cspace_converter("sRGB1", "CAM02-UCS")
+    start_color_lab = converter(start_color)
+    end_color_lab = converter(end_color)
+
+    # Create a linear interpolation of colors in LAB color space
+    lab_colors = np.linspace(start_color_lab, end_color_lab, N)
+
+    # Convert the interpolated colors back to RGB
+    converter = cspace_converter("CAM02-UCS", "sRGB1")
+    rgb_colors = converter(lab_colors)
+
+    # Ensure all RGB values are within the valid range [0, 1]
+    rgb_colors = np.clip(rgb_colors, 0, 1)
+
+    # Create and return the colormap
+    return LinearSegmentedColormap.from_list("custom_colormap", rgb_colors)

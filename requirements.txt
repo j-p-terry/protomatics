@@ -1,5 +1,6 @@
 astropy
 bettermoments
+colorspacious
 h5py
 matplotlib
 numpy
