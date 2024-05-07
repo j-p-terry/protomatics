@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 
-from .constants import au_pc, c_kms
+from .constants import au_pc, c, c_kms, jansky
 
 
 def normalize_array(arr: np.ndarray) -> np.ndarray:
@@ -80,3 +80,16 @@ def cylindrical_to_cartesian(r: float, phi: float) -> tuple:
     y = r * np.sin(phi)
 
     return x, y
+
+
+def to_mJy_pixel(
+    hdu: list,
+    value: float,
+):
+    """Watt/m2/pixel to mJy/pixel"""
+
+    ### assuming wl in microns
+    wl = hdu[0].header["wave"] * 1e-6
+    Hz = c / wl
+
+    return 1e3 * (jansky**-1.0) * value / Hz
