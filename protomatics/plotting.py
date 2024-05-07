@@ -92,7 +92,7 @@ def prepare_plot_data(
 
 
 def plot_wcs_data(
-    hdu: Optional[list],
+    hdu: Optional[list] = None,
     fits_path: Optional[str] = None,
     plot_data: Optional[np.ndarray] = None,
     channel: Optional[int] = 0,
