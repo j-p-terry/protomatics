@@ -1,5 +1,6 @@
 import os
 import warnings
+from typing import Optional
 
 import numpy as np
 
@@ -83,13 +84,18 @@ def cylindrical_to_cartesian(r: float, phi: float) -> tuple:
 
 
 def to_mJy_pixel(
-    hdu: list,
-    value: float,
+    hdu: Optional[list] = None,
+    value: float = 1.0,
+    wl: Optional[float] = None,
+    Hz: Optional[float] = None,
 ):
     """Watt/m2/pixel to mJy/pixel"""
 
     ### assuming wl in microns
-    wl = hdu[0].header["wave"] * 1e-6
-    Hz = c / wl
+    if Hz is None:
+        if hdu is not None and "wave" in hdu[0].header:
+            wl = hdu[0].header["wave"] * 1e-6
+        assert wl is not None, "No wavelength or frequency information!"
+        Hz = c / wl
 
     return 1e3 * (jansky**-1.0) * value / Hz
