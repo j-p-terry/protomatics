@@ -91,6 +91,7 @@ def prepare_moment_data(
     vel_max: Optional[float] = None,
     sub_cont: bool = False,
     make_nonnegative: bool = True,
+    use_mask: bool = True,
 ) -> tuple:
     """Prepares data for making moments"""
 
@@ -116,12 +117,16 @@ def prepare_moment_data(
     first_channel = np.argmin(np.abs(velax - vel_min)) if vel_max is not None else 0
     last_channel = np.argmin(np.abs(velax - vel_max)) if vel_max is not None else -1
 
-    channel_mask = bm.get_channel_mask(
-        data=data,
-        firstchannel=first_channel,
-        lastchannel=last_channel,
-    )
-    masked_data = data * channel_mask
+    if use_mask:
+        channel_mask = bm.get_channel_mask(
+            data=data,
+            firstchannel=first_channel,
+            lastchannel=last_channel,
+        )
+        masked_data = data * channel_mask
+    else:
+        velax = velax[first_channel:last_channel]
+        masked_data = data.copy()[first_channel:last_channel, :, :]
 
     return masked_data, velax, rms
 
@@ -137,6 +142,8 @@ def make_moments(
     velax: Optional[np.ndarray] = None,
     rms: Optional[np.ndarray] = None,
     outname: Optional[str] = None,
+    make_nonnegative: bool = False,
+    use_mask: bool = True,
 ) -> tuple:
     """Calculates moments for a given fits file between a give velocity range"""
 
@@ -147,6 +154,8 @@ def make_moments(
             vel_min=vel_min,
             vel_max=vel_max,
             sub_cont=sub_cont,
+            make_nonnegative=make_nonnegative,
+            use_mask=use_mask,
         )
 
     # calculate all moments, each is returned as a tuple with two entries
