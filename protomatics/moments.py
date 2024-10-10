@@ -128,7 +128,7 @@ def make_moments(
     which_moments: tuple = (0, 1, 2),
     vel_min: Optional[float] = None,
     vel_max: Optional[float] = None,
-    sub_cont: bool = True,
+    sub_cont: bool = False,
     save_moments: bool = False,
     masked_data: Optional[np.ndarray] = None,
     velax: Optional[np.ndarray] = None,
