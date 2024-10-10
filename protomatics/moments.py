@@ -89,7 +89,8 @@ def prepare_moment_data(
     fits_path: str,
     vel_min: Optional[float] = None,
     vel_max: Optional[float] = None,
-    sub_cont: bool = True,
+    sub_cont: bool = False,
+    make_nonnegative: bool = True,
 ) -> tuple:
     """Prepares data for making moments"""
 
@@ -105,6 +106,8 @@ def prepare_moment_data(
     # subtract continuum
     if sub_cont:
         data[:] -= 0.5 * (data[0] + data[-1])
+        if make_nonnegative:
+            data[data < 0] = 0
 
     # estimate RMS
     rms = bm.estimate_RMS(data=data, N=5)
