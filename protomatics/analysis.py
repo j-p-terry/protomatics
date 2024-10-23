@@ -680,7 +680,6 @@ def get_annulus(
 
 
 def get_annulus_Sigma(
-    sdf: sn.SarracenDataFrame,
     M_annulus: float,
     r_annulus: float,
     dr: float = 0.5,
@@ -725,7 +724,7 @@ def get_annulus_toomre(
     M_annulus = np.sum(sdf.m)
 
     # Get surface density
-    Sigma = get_annulus_Sigma(sdf, M_annulus, r_annulus, dr=dr)
+    Sigma = get_annulus_Sigma(M_annulus, r_annulus, dr=dr)
 
     # Add rms sound speed
     crms_sq = get_cs_sq(sdf, gamma=gamma)
