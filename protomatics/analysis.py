@@ -741,6 +741,11 @@ def get_annulus_toomre(
     Omega = np.sqrt(G_ * mass / r_annulus**3.0)
 
     if return_intermediate_values:
-        return {"Q": crms * Omega / (np.pi * Sigma), "Sigma": Sigma, "cs_rms": crms}
+        return {
+            "Q": crms * Omega / (np.pi * Sigma),
+            "Sigma": Sigma,
+            "cs_rms": crms,
+            "Omega": Omega,
+        }
 
     return crms * Omega / (np.pi * Sigma)
