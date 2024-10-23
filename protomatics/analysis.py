@@ -4,6 +4,7 @@ import bettermoments as bm
 import h5py
 import numpy as np
 import pandas as pd
+import sarracen as sn
 from astropy.io import fits
 from scipy.interpolate import griddata
 
@@ -667,3 +668,80 @@ def calculate_fourier_amps(
         amps[mode] = abs(np.sum(coeffs)) / N
 
     return amps
+
+
+def get_annulus(
+    sdf: sn.SarracenDataFrame,
+    r_annulus: float,
+    dr: float = 0.5,
+) -> sn.SarracenDataFrame:
+    """Returns a dataframe with data between r - 0.5 dr -> r + 0.5 dr"""
+    return sdf[(sdf.r < r_annulus + 0.5 * dr) & (sdf.r > r_annulus - 0.5 * dr)]
+
+
+def get_annulus_Sigma(
+    sdf: sn.SarracenDataFrame,
+    M_annulus: float,
+    r_annulus: float,
+    dr: float = 0.5,
+) -> float:
+    """Simga(r) = M_enc_annulus / pi[(r + 0.5 dr)^2 - (r - 0.5dr)^2]"""
+
+    return M_annulus / (np.pi * ((r_annulus + 0.5 * dr) ** 2.0 - (r_annulus - 0.5 * dr) ** 2.0))
+
+
+def get_cs_sq(sdf: sn.SarracenDataFrame, gamma: float = 5.0 / 3.0) -> np.ndarray:
+    """Gets the square of the sound speed"""
+
+    return (
+        (2.0 / 3.0) * sdf.u.to_numpy() if gamma == 1 else (gamma - 1.0) * gamma * sdf.u.to_numpy()
+    )
+
+
+def get_annulus_toomre(
+    sdf: sn.SarracenDataFrame,
+    r_annulus: float,
+    dr: float = 0.5,
+    mass: float = 1.0,
+    G_: float = 1.0,
+    gamma: float = 5.0 / 3.0,
+    convert: bool = False,
+    return_intermediate_values: bool = False,
+) -> Union[dict, float]:
+    """Gets Q according to
+    Q = cs_rms * Omega / pi Sigma
+    where Simga(r) = M_enc_annulus / pi[(r + 0.5 dr)^2 - (r - 0.5dr)^2]
+    and
+    cs_rms^2 = 2/3u (gamma = 1)
+           = (gamma - 1) gamma u (gamma != 1)
+    """
+    sdf["r"] = np.sqrt(sdf.x**2.0 + sdf.y**2.0)
+
+    # find everything inside that annulus
+    sdf = get_annulus(sdf, r_annulus, dr=dr)
+
+    # Get enclosed mass
+    sdf.create_mass_column()
+    M_annulus = np.sum(sdf.m)
+
+    # Get surface density
+    Sigma = get_annulus_Sigma(sdf, M_annulus, r_annulus, dr=dr)
+
+    # Add rms sound speed
+    crms_sq = get_cs_sq(sdf, gamma=gamma)
+    if convert:
+        mass *= sdf.params["umass"]
+        r_annulus *= sdf.params["udist"]
+        crms_sq *= (sdf.params["udist"] / sdf.params["utime"]) ** 2.0
+        G_ *= (sdf.params["udist"] ** 3.0) / ((sdf.params["utime"] ** 2.0) * sdf.params["umass"])
+        Sigma *= sdf.params["umass"] / (sdf.params["udist"] ** 2.0)
+
+    crms = np.sqrt(np.mean(crms_sq))
+
+    # Keplerian frequency
+    Omega = np.sqrt(G_ * mass / r_annulus**3.0)
+
+    if return_intermediate_values:
+        return {"Q": crms * Omega / (np.pi * Sigma), "Sigma": Sigma, "cs_rms": crms}
+
+    return crms * Omega / (np.pi * Sigma)

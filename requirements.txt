@@ -6,4 +6,5 @@ matplotlib
 numpy
 pandas
 pytest
+sarracen
 scipy
