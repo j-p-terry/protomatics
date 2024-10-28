@@ -1,12 +1,12 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import matplotlib
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
-from astropy.visualization.wcsaxes import WCSAxes
+from astropy.visualization.wcsaxes import WCSAxes, add_beam
 from astropy.wcs import WCS
 from colorspacious import cspace_converter
 from matplotlib import colormaps as mplcm
@@ -119,8 +119,8 @@ def plot_wcs_data(
     overlay_data_scale: float = 1.0,
     plot_cmap: str = "magma",
     plot_units: str = "",
-    beam_position: Optional[list] = None,
-    overlay_beam_position: Optional[list] = None,
+    beam_position: Union[str, list] = "bottom left",
+    overlay_beam_position: Union[str, list] = "bottom right",
     beam_color: str = "white",
     overlay_beam_color: str = "limegreen",
     plot_beam: bool = False,
@@ -130,6 +130,8 @@ def plot_wcs_data(
     interpolation: str = "none",
     plot_text: Optional[dict] = None,
     plot_text_color: str = "white",
+    manual_beam_location: bool = False,
+    manual_overlay_beam_location: bool = False,
     **kwargs,
 ) -> None:
     """
@@ -321,32 +323,53 @@ def plot_wcs_data(
     if plot_beam:
         if "BMIN" not in hdu[0].header.keys() or "BMAJ" not in hdu[0].header.keys():
             pass
-        c = Ellipse(
-            beam_position,
-            width=hdu[0].header["BMIN"],
-            height=hdu[0].header["BMAJ"],
-            edgecolor=beam_color,
-            facecolor=beam_color,
-            angle=hdu[0].header.get("BPA", 0),
-            transform=ax.get_transform("fk5"),
-        )
-        ax.add_patch(c)
+        if manual_beam_location and type(beam_position) == list:
+            c = Ellipse(
+                beam_position,
+                width=hdu[0].header["BMIN"],
+                height=hdu[0].header["BMAJ"],
+                edgecolor=beam_color,
+                facecolor=beam_color,
+                angle=hdu[0].header.get("BPA", 0),
+                transform=ax.get_transform("fk5"),
+            )
+            ax.add_patch(c)
+        else:
+            add_beam(
+                ax,
+                header=hdu[0].header,
+                edgecolor=beam_color,
+                facecolor=beam_color,
+                corner=beam_position if type(beam_position) == str else "bottom left",
+            )
+
     if plot_overlay_beam and overlay_hdu is not None:
         if (
             "BMIN" not in overlay_hdu[0].header.keys()
             or "BMAJ" not in overlay_hdu[0].header.keys()
         ):
             pass
-        c = Ellipse(
-            overlay_beam_position,
-            width=overlay_hdu[0].header["BMIN"],
-            height=overlay_hdu[0].header["BMAJ"],
-            edgecolor=overlay_beam_color,
-            facecolor=overlay_beam_color,
-            angle=overlay_hdu[0].header.get("BPA", 0),
-            transform=ax.get_transform("fk5"),
-        )
-        ax.add_patch(c)
+        if manual_overlay_beam_location and type(overlay_beam_position) == list:
+            c = Ellipse(
+                overlay_beam_position,
+                width=overlay_hdu[0].header["BMIN"],
+                height=overlay_hdu[0].header["BMAJ"],
+                edgecolor=overlay_beam_color,
+                facecolor=overlay_beam_color,
+                angle=overlay_hdu[0].header.get("BPA", 0),
+                transform=ax.get_transform("fk5"),
+            )
+            ax.add_patch(c)
+        else:
+            add_beam(
+                ax,
+                header=overlay_hdu[0].header,
+                edgecolor=overlay_beam_color,
+                facecolor=overlay_beam_color,
+                corner=overlay_beam_position
+                if type(overlay_beam_position) == str
+                else "bottom right",
+            )
 
     if save:
         plt.savefig(save_name)
