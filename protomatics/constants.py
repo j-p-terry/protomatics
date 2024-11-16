@@ -14,4 +14,4 @@ mean_molecular_weight = 2.353
 Z_sol = 0.0196  # solar metallicity
 stef_boltz_cgs = 5.6704e-5
 k_b_cgs = 1.3807e-16
-seconds_per_year = 31556736.0
+seconds_per_year = 31556952.0
