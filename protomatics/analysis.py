@@ -749,3 +749,97 @@ def get_annulus_toomre(
         }
 
     return crms * Omega / (np.pi * Sigma)
+
+
+def compute_local_surface_density(
+    sdf: sn.SarracenDataFrame, dr: float = 0.25, dphi: float = np.pi / 18
+) -> np.ndarray:
+    """
+    Compute the local vertically integrated surface density from SPH particle data.
+    Recommended to only use a copy of the input data frame because there are some
+    sneaky inline operations that can mess things up
+
+    Parameters:
+        sdf (: sn.SarracenDataFrame): sn.Dataframe containing SPH particle data with columns:
+                           'x', 'y', 'z' with parameters "mass" and "umass" and "udist"
+        dr (float): Radial bin width for grouping particles (default: 1.0).
+        dphi (float): Azimuthal bin width in radians (default: π/18 or 10 degrees).
+
+    Returns:
+        numpy array of surface density in CGS units
+    """
+    uarea = sdf.params["umass"] / (sdf.params["udist"] ** 2)
+    particle_mass = sdf.params["mass"]
+    if "r" not in sdf.columns:
+        sdf["r"] = np.sqrt(sdf["x"] ** 2.0 + sdf["y"] ** 2.0)
+    if "phi" not in sdf.columns:
+        sdf["phi"] = np.arctan2(sdf["y"], sdf["x"])
+    if "rho" not in sdf.columns:
+        sdf.calc_density()
+
+    # Assign particles to radial and azimuthal bins
+    sdf["r_bin"] = (sdf["r"] // dr) * dr  # Floor to nearest radial bin
+    sdf["phi_bin"] = (sdf["phi"] // dphi) * dphi  # Floor to nearest azimuthal bin
+    sdf["mass"] = particle_mass * np.ones_like(sdf["r"])
+
+    # Compute local surface density by summing mass / area for each (R_bin, phi_bin)
+    def compute_bin_surface_density(group):
+        R_bin = group["r_bin"].iloc[0]
+        area = dr * R_bin * dphi  # Area of the bin in polar coordinates
+        return group["mass"].sum() / area
+
+    surface_density = (
+        sdf.groupby(["r_bin", "phi_bin"])
+        .apply(compute_bin_surface_density)
+        .reset_index(name="Sigma")
+    )
+    sdf = sdf.copy().merge(surface_density, on=["r_bin", "phi_bin"], how="left")
+    return sdf["Sigma"].to_numpy() * uarea
+
+
+def mdot_to_Bphi(
+    M: float,
+    mdot: Union[float, np.ndarray],
+    R: Union[float, np.ndarray],
+    f: float = 50.0,
+    L_factor: float = 6.0,
+    use_mdot_abs: bool = True,
+) -> Union[float, np.ndarray]:
+    """Gets toroidal magnetic field (G)
+    If radial transport dominates
+    Mdot in Ms/yr
+    R in au
+    M in Msun
+    Weiss et al. (2021) Eq 2
+    Optionally use absolute value of mdot (then add sign of mdot)
+    """
+    if not use_mdot_abs:
+        return (
+            0.72
+            * (M ** (0.25))
+            * ((mdot * 1e8) ** (0.5))
+            * ((f / L_factor) ** (0.5))
+            * (R ** (-11.0 / 8.0))
+        )
+    return (
+        0.72
+        * (M ** (0.25))
+        * ((np.abs(mdot) * 1e8) ** (0.5))
+        * ((f / L_factor) ** (0.5))
+        * (R ** (-11.0 / 8.0))
+        * np.sign(mdot)
+    )
+
+
+def vr_to_mdot(
+    R: Union[float, np.ndarray],
+    Sigma: Union[float, np.ndarray],
+    vr: Union[float, np.ndarray],
+) -> Union[float, np.ndarray]:
+    """Accretion rate from accretion velocity
+    in g/s
+    Accretion Power in Astrophysics Eq 5.14
+    Same as Eq 15 in Wardle 2007
+    """
+
+    return 2.0 * np.pi * R * Sigma * (-vr)

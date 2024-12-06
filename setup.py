@@ -10,7 +10,7 @@ with open(os.path.join(this_directory, "README.md")) as f:
 
 setuptools.setup(
     name="protomatics",
-    version="0.7.5",
+    version="0.7.6",
     author="Jason Terry",
     author_email="jpterry@uga.edu",
     packages=["protomatics"],
@@ -23,9 +23,13 @@ setuptools.setup(
     install_requires=[
         "astropy",
         "bettermoments",
+        "colorspacious",
+        "h5py",
         "matplotlib",
         "numpy",
+        "pandas",
         "pytest",
+        "sarracen",
         "scipy",
     ],
     classifiers=[
