@@ -770,11 +770,12 @@ def compute_local_surface_density(
     """
     uarea = sdf.params["umass"] / (sdf.params["udist"] ** 2)
     particle_mass = sdf.params["mass"]
-    if "r" not in sdf.columns:
+    cols = sdf.columns
+    if "r" not in cols:
         sdf["r"] = np.sqrt(sdf["x"] ** 2.0 + sdf["y"] ** 2.0)
-    if "phi" not in sdf.columns:
+    if "phi" not in cols:
         sdf["phi"] = np.arctan2(sdf["y"], sdf["x"])
-    if "rho" not in sdf.columns:
+    if "rho" not in cols:
         sdf.calc_density()
 
     # Assign particles to radial and azimuthal bins
