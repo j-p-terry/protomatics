@@ -122,27 +122,51 @@ def make_hdf5_dataframe(
     return hdf5_df, file
 
 
+def make_sink_dataframe(file_path: str, file: h5py._hl.files.File = None):
+    """Reads in an .h5 output and gets sink data"""
+
+    if file is None:
+        file = h5py.File(file_path, "r")
+
+    sinks = {}
+    sinks["m"] = file["sinks"]["m"][()]
+    sinks["maccr"] = file["sinks"]["maccreted"][()]
+    sinks["x"] = file["sinks"]["xyz"][()][:, 0]
+    sinks["y"] = file["sinks"]["xyz"][()][:, 1]
+    sinks["z"] = file["sinks"]["xyz"][()][:, 2]
+    sinks["vx"] = file["sinks"]["vxyz"][()][:, 0]
+    sinks["vy"] = file["sinks"]["vxyz"][()][:, 1]
+    sinks["vz"] = file["sinks"]["vxyz"][()][:, 2]
+
+    return pd.DataFrame(sinks)
+
+
+def get_run_params(file_path: str, file: h5py._hl.files.File = None):
+    """Reads in an .h5 output and gets parameter data"""
+
+    if file is None:
+        file = h5py.File(file_path, "r")
+    params = {}
+    try:
+        params["nsink"] = len(file["sinks"]["m"][()])
+    except KeyError:
+        params["nsink"] = 0
+    for key in list(file["header"].keys()):
+        params[key] = file["header"][key][()]
+
+    return params
+
+
 class SPHData:
 
     """A class that includes data read from an HDF5 output (designed for PHANTOM at this point)"""
 
     def __init__(self, file_path: str, extra_file_keys: Optional[list] = None):
         self.data, file = make_hdf5_dataframe(
-            file_path, extra_file_keys=extra_file_keys, return_file=True
+            file_path,
+            extra_file_keys=extra_file_keys,
+            return_file=True,
         )
-        self.params = {}
-        self.params["nsink"] = len(file["sinks"]["m"][()])
-        for key in list(file["header"].keys()):
-            self.params[key] = file["header"][key][()]
 
-        sinks = {}
-        sinks["m"] = file["sinks"]["m"][()]
-        sinks["maccr"] = file["sinks"]["maccreted"][()]
-        sinks["x"] = file["sinks"]["xyz"][()][:, 0]
-        sinks["y"] = file["sinks"]["xyz"][()][:, 1]
-        sinks["z"] = file["sinks"]["xyz"][()][:, 2]
-        sinks["vx"] = file["sinks"]["vxyz"][()][:, 0]
-        sinks["vy"] = file["sinks"]["vxyz"][()][:, 1]
-        sinks["vz"] = file["sinks"]["vxyz"][()][:, 2]
-
-        self.sink_data = pd.DataFrame(sinks)
+        self.sink_data = make_sink_dataframe(None, file)
+        self.params = get_run_params
