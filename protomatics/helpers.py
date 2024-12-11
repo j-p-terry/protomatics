@@ -254,7 +254,7 @@ def gaussian_smoothing(
 
 
 @njit
-def dimensionless_w(q):
+def _dimensionless_w(q):
     """
     Dimensionless cubic spline kernel shape function w(q), without normalization.
     This is the 'w(q)' that appears in W(r,h) = (8/(pi h^3)) * w(q).
@@ -272,7 +272,7 @@ def dimensionless_w(q):
 
 
 @njit
-def trapz_numba(y, x):
+def _trapz_numba(y, x):
     """
     Perform trapezoidal integration over arrays x,y with numba.
     """
@@ -283,7 +283,7 @@ def trapz_numba(y, x):
 
 
 @njit
-def dimensionless_integrate_F(q_values, zmax=3.0, nz=100):
+def _dimensionless_integrate_F(q_values, zmax=3.0, nz=100):
     r"""
     Compute F(q) = \int w( sqrt(q^2+z'^2) ) dz' from z'=-zmax to z'=zmax.
     This is the dimensionless integral, independent of h.
@@ -295,26 +295,26 @@ def dimensionless_integrate_F(q_values, zmax=3.0, nz=100):
     F = np.zeros_like(q_values)
     for i, q in enumerate(q_values):
         r_prime = np.sqrt(q**2 + z_prime**2)
-        w_vals = dimensionless_w(r_prime)
+        w_vals = _dimensionless_w(r_prime)
         # integrate w over z'
-        F[i] = trapz_numba(w_vals, z_prime)
+        F[i] = _trapz_numba(w_vals, z_prime)
     return F
 
 
-def precompute_dimensionless_F(q_table=None, zmax=3.0, nz=100):
+def _precompute_dimensionless_F(q_table=None, zmax=3.0, nz=100):
     """
     Precompute the dimensionless integral F(q) once.
     """
     if q_table is None:
         q_table = np.linspace(0, 1, 200)
-    F = dimensionless_integrate_F(q_table, zmax=zmax, nz=nz)
+    F = _dimensionless_integrate_F(q_table, zmax=zmax, nz=nz)
     # Create interpolation for F(q)
     # Outside q=1, F(q)=0, inside q=0..1 use linear interpolation
     F_interp = interp1d(q_table, F, kind="linear", bounds_error=False, fill_value=0.0)
     return q_table, F_interp
 
 
-def precompute_line_integrated_kernel(h_values, q_table=None, zmax=3.0, nz=100):
+def _precompute_line_integrated_kernel(h_values, q_table=None, zmax=3.0, nz=100):
     """
     Precompute W_int(R,h) using the dimensionless approach.
 
@@ -326,7 +326,7 @@ def precompute_line_integrated_kernel(h_values, q_table=None, zmax=3.0, nz=100):
     This avoids repeated integration for each h.
     """
     # Compute dimensionless F once
-    q_table, F_interp = precompute_dimensionless_F(q_table=q_table, zmax=zmax, nz=nz)
+    q_table, F_interp = _precompute_dimensionless_F(q_table=q_table, zmax=zmax, nz=nz)
 
     W_int_interp_dict = {}
     for h in h_values:
@@ -408,7 +408,7 @@ def sph_smoothing(
     # Precompute kernel lookups
     # Discretize unique h if desired. For large sets, consider a cache or unique set.
     unique_h = np.unique(h)
-    W_int_interp_dict = precompute_line_integrated_kernel(unique_h, zmax=zmax, nz=nz)
+    W_int_interp_dict = _precompute_line_integrated_kernel(unique_h, zmax=zmax, nz=nz)
 
     # Group particles by h
     # Sort by h and then group
