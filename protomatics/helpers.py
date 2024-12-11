@@ -4,6 +4,8 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+from numba import njit
+from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter
 
 from .constants import au_pc, c, c_kms, jansky
@@ -203,143 +205,257 @@ def sum_within_bins(df: pd.DataFrame, value_column: str, bin_columns: Union[str,
     return df.groupby(bin_columns)[value_column].sum()
 
 
-# Define SPH kernel function
-def sph_array_kernel(r, h, is_3d: bool = False, normalize: bool = True):
-    """
-    SPH kernel function that handles array inputs for distances and smoothing lengths.
-
-    Parameters:
-        r (np.ndarray): Distances between particle and grid center.
-        h (np.ndarray): Smoothing lengths (one per particle).
-        is_3d (bool): use 3d normalization
-        normalize (bool): normalize kernel across area/sphere (use if not averaging)
-
-    Returns:
-        np.ndarray: Kernel values for each distance and smoothing length.
-    """
-    q = r / h
-    norm_factor = (1 / (np.pi * h**3) if is_3d else 1 / (np.pi * h**2)) if normalize else 1
-    result = np.zeros_like(q)
-
-    # Region where q <= 1
-    mask1 = q <= 1
-    result[mask1] = norm_factor[mask1] * (1 - 1.5 * q[mask1] ** 2 + 0.75 * q[mask1] ** 3)
-
-    # Region where 1 < q <= 2
-    mask2 = (q > 1) & (q <= 2)
-    result[mask2] = norm_factor[mask2] * (0.25 * (2 - q[mask2]) ** 3)
-
-    return result
-
-
-def sph_interpolate(
+def gaussian_smoothing(
     df: pd.DataFrame,
     value_col: str,
     x_col: str,
     y_col: str,
-    z_col: Optional[str] = None,
-    h_col: str = "h",
     grid_size: int = 512,
     extent: Optional[list] = None,
     average: bool = False,
     smooth_sigma: float = 2.0,
+    zlims: Optional[tuple] = None,
 ):
-    """
-    Perform SPH integration on particle data with the option to average contributions.
-
-    Parameters:
-        df (pd.DataFrame): Input DataFrame with particle data.
-        value_col (str): Column name for the value to integrate (e.g., density).
-        x_col, y_col (str): Column names for x and y coordinates.
-        z_col (str or None): Column name for z coordinate (if 3D data). Defaults to None for 2D.
-        h_col (str or None): Column name for smoothing length. If None, a constant smoothing length is assumed.
-        grid_size (int): Number of grid points in each dimension.
-        extent (tuple or None): Extent of the grid as (xmin, xmax, ymin, ymax[, zmin, zmax]).
-                                If None, it will be calculated from the data.
-        average (bool): If True, average the contributions in each grid cell.
-        smooth_sigma (float): gaussian smoothing width
-
-        Note: if average == False, the units of the original value will be multiplied by udist (e.g. density -> surface density)
-
-
-    Returns:
-        np.ndarray: Integrated grid (2D or 3D, depending on input).
-    """
-    # Determine dimensionality
-    is_3d = z_col is not None
-    x = df[x_col].to_numpy()
-    y = df[y_col].to_numpy()
-    z = df[z_col].to_numpy() if is_3d else None
+    """Performs gaussian smoothing of 2D or 3D data. Note that this adds a spatial dimension"""
+    if zlims is not None:
+        df = df[(df.z > zlims[0]) & (df.z < zlims[1])]
+    x = df[x_col]
+    y = df[y_col]
+    values = df[value_col]
 
     # Determine grid extent
     if extent is None:
         xmin, xmax = x.min(), x.max()
         ymin, ymax = y.min(), y.max()
-        if is_3d:
-            zmin, zmax = z.min(), z.max()
-            extent = (xmin, xmax, ymin, ymax, zmin, zmax)
-        else:
-            extent = (xmin, xmax, ymin, ymax)
+    else:
+        xmin, xmax, ymin, ymax = extent
 
     # Create grid
-    x_grid = np.linspace(extent[0], extent[1], grid_size)
-    y_grid = np.linspace(extent[2], extent[3], grid_size)
-    if is_3d:
-        z_grid = np.linspace(extent[4], extent[5], grid_size)
+    x_grid = np.linspace(xmin, xmax, grid_size)
+    y_grid = np.linspace(ymin, ymax, grid_size)
 
-    # Group particles by their nearest grid points
-    x_idx = np.digitize(x, x_grid) - 1
-    y_idx = np.digitize(y, y_grid) - 1
-    if is_3d:
-        z_idx = np.digitize(z, z_grid) - 1
-
-    # Initialize grid and count arrays
-    if is_3d:
-        grid = np.zeros((grid_size, grid_size, grid_size))
-        count = np.zeros((grid_size, grid_size, grid_size)) if average else None
-    else:
-        grid = np.zeros((grid_size, grid_size))
-        count = np.zeros((grid_size, grid_size)) if average else None
-
-    # Group data by grid indices
-    grouped = df.groupby([x_idx, y_idx] if not is_3d else [x_idx, y_idx, z_idx])
-
-    # Process each group
-    for group_idx, group_data in grouped:
-        # Get the center of the current grid cell
-        if is_3d:
-            gx, gy, gz = group_idx
-            grid_center = (x_grid[gx], y_grid[gy], z_grid[gz])
-        else:
-            gx, gy = group_idx
-            grid_center = (x_grid[gx], y_grid[gy])
-
-        # Compute distances and apply SPH kernel
-        dx = group_data[x_col].to_numpy() - grid_center[0]
-        dy = group_data[y_col].to_numpy() - grid_center[1]
-        if is_3d:
-            dz = group_data[z_col].to_numpy() - grid_center[2]
-            r = np.sqrt(dx**2 + dy**2 + dz**2)
-        else:
-            r = np.sqrt(dx**2 + dy**2)
-        h_vals = group_data[h_col].to_numpy() if h_col else np.full(len(r), 1.0)
-        kernel_values = sph_array_kernel(r, h_vals)
-
-        # Sum contributions to the grid
-        value_contributions = group_data[value_col].to_numpy() * kernel_values
-        if is_3d:
-            grid[gz, gy, gx] += np.sum(value_contributions)
+    # Interpolate onto the grid using SPH-like smoothing
+    grid = np.zeros((grid_size, grid_size))
+    if average:
+        count = np.zeros_like(grid)
+    for xi, yi, vi in zip(x, y, values):
+        x_idx = np.searchsorted(x_grid, xi) - 1
+        y_idx = np.searchsorted(y_grid, yi) - 1
+        if 0 <= x_idx < grid_size and 0 <= y_idx < grid_size:
+            grid[y_idx, x_idx] += vi  # Deposit the value into the grid cell
             if average:
-                count[gz, gy, gx] += len(value_contributions)
-        else:
-            grid[gy, gx] += np.sum(value_contributions)
-            if average:
-                count[gy, gx] += len(value_contributions)
+                count[y_idx, x_idx] += 1
 
-    # Average the grid if needed
     if average:
         grid = np.divide(grid, count, out=np.zeros_like(grid), where=(count > 0))
-    smoothed_grid = gaussian_filter(grid, sigma=smooth_sigma)
-    if is_3d:
-        return x_grid, y_grid, z_grid, smoothed_grid
-    return x_grid, y_grid, smoothed_grid
+    smoothed_image = gaussian_filter(grid, sigma=smooth_sigma)
+
+    return x_grid, y_grid, smoothed_image
+
+
+@njit
+def dimensionless_w(q):
+    """
+    Dimensionless cubic spline kernel shape function w(q), without normalization.
+    This is the 'w(q)' that appears in W(r,h) = (8/(pi h^3)) * w(q).
+
+    w(q) = 1 - 6q^2 + 6q^3        for 0 <= q <= 0.5
+         = 2(1-q)^3              for 0.5 < q <= 1
+         = 0                     otherwise
+    """
+    w_vals = np.zeros_like(q)
+    mask1 = (q >= 0) & (q <= 0.5)
+    w_vals[mask1] = 1 - 6 * q[mask1] ** 2 + 6 * q[mask1] ** 3
+    mask2 = (q > 0.5) & (q <= 1.0)
+    w_vals[mask2] = 2 * (1 - q[mask2]) ** 3
+    return w_vals
+
+
+@njit
+def trapz_numba(y, x):
+    """
+    Perform trapezoidal integration over arrays x,y with numba.
+    """
+    s = 0.0
+    for i in range(len(y) - 1):
+        s += 0.5 * (y[i] + y[i + 1]) * (x[i + 1] - x[i])
+    return s
+
+
+@njit
+def dimensionless_integrate_F(q_values, zmax=3.0, nz=100):
+    r"""
+    Compute F(q) = \int w( sqrt(q^2+z'^2) ) dz' from z'=-zmax to z'=zmax.
+    This is the dimensionless integral, independent of h.
+
+    zmax chosen so that beyond zmax the kernel contribution is negligible.
+    """
+    z_prime = np.linspace(-zmax, zmax, nz)
+    z_prime[1] - z_prime[0]
+    F = np.zeros_like(q_values)
+    for i, q in enumerate(q_values):
+        r_prime = np.sqrt(q**2 + z_prime**2)
+        w_vals = dimensionless_w(r_prime)
+        # integrate w over z'
+        F[i] = trapz_numba(w_vals, z_prime)
+    return F
+
+
+def precompute_dimensionless_F(q_table=None, zmax=3.0, nz=100):
+    """
+    Precompute the dimensionless integral F(q) once.
+    """
+    if q_table is None:
+        q_table = np.linspace(0, 1, 200)
+    F = dimensionless_integrate_F(q_table, zmax=zmax, nz=nz)
+    # Create interpolation for F(q)
+    # Outside q=1, F(q)=0, inside q=0..1 use linear interpolation
+    F_interp = interp1d(q_table, F, kind="linear", bounds_error=False, fill_value=0.0)
+    return q_table, F_interp
+
+
+def precompute_line_integrated_kernel(h_values, q_table=None, zmax=3.0, nz=100):
+    """
+    Precompute W_int(R,h) using the dimensionless approach.
+
+    Steps:
+    1) Compute F(q) once dimensionlessly.
+    2) For each h, W_int(q,h) = (8/(pi h^2)) * F(q).
+    We create an interpolation function that applies this scaling.
+
+    This avoids repeated integration for each h.
+    """
+    # Compute dimensionless F once
+    q_table, F_interp = precompute_dimensionless_F(q_table=q_table, zmax=zmax, nz=nz)
+
+    W_int_interp_dict = {}
+    for h in h_values:
+        # Create a lambda that given q returns scaled W_int
+        # W_int(q,h) = (8/(pi h^2))*F(q)
+        # We'll wrap it in an interp1d call for consistency:
+        # We have F_interp(q), we just multiply the result by (8/(pi h^2))
+        # To create a proper interpolation object, we do so at q_table points
+        F_vals = F_interp(q_table)
+        W_int_vals = (8.0 / (np.pi * h**2)) * F_vals
+        interp_func = interp1d(
+            q_table, W_int_vals, kind="linear", bounds_error=False, fill_value=0.0
+        )
+        W_int_interp_dict[h] = interp_func
+
+    return W_int_interp_dict
+
+
+def sph_smoothing(
+    df,
+    value,
+    x_bounds,
+    y_bounds,
+    nx,
+    ny,
+    integrate=True,
+    zmax=3.0,
+    nz=100,
+    smooth_sigma: float = 2.0,
+    resmooth: bool = False,
+    x_axis: str = "x",
+    y_axis: str = "y",
+):
+    """
+    Project or average SPH data onto a 2D grid using an SPH kernel.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        DataFrame with columns: x, y, z, h, value
+    x_bounds : (float, float)
+        (xmin, xmax)
+    y_bounds : (float, float)
+        (ymin, ymax)
+    nx, ny : int
+        Grid resolution in x and y directions
+    integrate : bool
+        If True, integrate along z (like surface density).
+        If False, produce a vertically averaged value.
+    zmax : float
+        Integration limit in units of h (for line integration)
+    nz : int
+        Number of steps in z-integration
+
+    Note: integrate = True will add an extra spatial dimension
+    Returns:
+    --------
+    X, Y : 2D arrays
+        Meshgrid arrays for x,y coordinates
+    out : 2D array
+        The smoothed 2D field.
+    """
+
+    # Extract particle data
+    x = df[x_axis].to_numpy()
+    y = df[y_axis].to_numpy()
+    h = df["h"].to_numpy()
+    v = df[value].to_numpy()
+
+    # Create output grid
+    xgrid = np.linspace(x_bounds[0], x_bounds[1], nx)
+    ygrid = np.linspace(y_bounds[0], y_bounds[1], ny)
+    dx = xgrid[1] - xgrid[0]
+    dy = ygrid[1] - ygrid[0]
+    X, Y = np.meshgrid(xgrid, ygrid, indexing="xy")
+    out = np.zeros((ny, nx))
+    weight = np.zeros((ny, nx))
+
+    # Precompute kernel lookups
+    # Discretize unique h if desired. For large sets, consider a cache or unique set.
+    unique_h = np.unique(h)
+    W_int_interp_dict = precompute_line_integrated_kernel(unique_h, zmax=zmax, nz=nz)
+
+    # Group particles by h
+    # Sort by h and then group
+    order = np.argsort(h)
+    x_sorted = x[order]
+    y_sorted = y[order]
+    h_sorted = h[order]
+    v_sorted = v[order]
+
+    # Find unique h groups
+    h_vals, h_starts, h_counts = np.unique(h_sorted, return_index=True, return_counts=True)
+
+    # Loop over h groups
+    for h_val, start, count in zip(h_vals, h_starts, h_counts):
+        x_h = x_sorted[start : start + count]
+        y_h = y_sorted[start : start + count]
+        v_h = v_sorted[start : start + count]
+
+        W_int_interp_func = W_int_interp_dict[h_val]
+
+        # Process all particles with this h in a loop
+        for x_p, y_p, val_p in zip(x_h, y_h, v_h):
+            ix_min = max(0, int((x_p - h_val - x_bounds[0]) / dx))
+            ix_max = min(nx - 1, int((x_p + h_val - x_bounds[0]) / dx))
+            iy_min = max(0, int((y_p - h_val - y_bounds[0]) / dy))
+            iy_max = min(ny - 1, int((y_p + h_val - y_bounds[0]) / dy))
+
+            if ix_min > ix_max or iy_min > iy_max:
+                continue
+
+            X_sub = X[iy_min : iy_max + 1, ix_min : ix_max + 1]
+            Y_sub = Y[iy_min : iy_max + 1, ix_min : ix_max + 1]
+
+            dx_block = X_sub - x_p
+            dy_block = Y_sub - y_p
+            R_block = np.sqrt(dx_block**2 + dy_block**2)
+
+            Wvals = W_int_interp_func(np.clip(R_block / h_val, 0, 1))
+
+            out[iy_min : iy_max + 1, ix_min : ix_max + 1] += val_p * Wvals
+            weight[iy_min : iy_max + 1, ix_min : ix_max + 1] += Wvals
+
+    if not integrate:
+        mask = weight > 0
+        out[mask] /= weight[mask]
+
+    if resmooth:
+        out = gaussian_filter(out, sigma=smooth_sigma)
+
+    return X, Y, out
