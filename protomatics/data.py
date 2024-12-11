@@ -36,8 +36,7 @@ def make_ev_dataframe(file_path: str) -> pd.DataFrame:
 
 
 def make_hdf5_dataframe(
-    file_path: str,
-    extra_file_keys: Optional[list] = None,
+    file_path: str, extra_file_keys: Optional[list] = None, return_file: bool = False
 ) -> pd.DataFrame:
     """Reads an HDF5 file and returns a dataframe with the variables in file_keys"""
 
@@ -45,7 +44,19 @@ def make_hdf5_dataframe(
     file = h5py.File(file_path, "r")
 
     # basic information that is always loaded
-    basic_keys = ["x", "y", "z", "vz", "vy", "vz", "r", "phi", "vr", "vphi"]
+    basic_keys = [
+        "x",
+        "y",
+        "z",
+        "vz",
+        "vy",
+        "vz",
+        "r",
+        "phi",
+        "vr",
+        "vphi",
+        "h",
+    ]
 
     # initialize dataframe
     hdf5_df = pd.DataFrame(columns=basic_keys)
@@ -56,6 +67,7 @@ def make_hdf5_dataframe(
     hdf5_df["x"] = xyzs[:, 0]
     hdf5_df["y"] = xyzs[:, 1]
     hdf5_df["z"] = xyzs[:, 2]
+    hdf5_df["h"] = file["particles/h"][:]
     hdf5_df["r"] = np.sqrt(hdf5_df.x**2 + hdf5_df.y**2)
     hdf5_df["phi"] = np.arctan2(hdf5_df.y, hdf5_df.x)
     hdf5_df["vx"] = vxyzs[:, 0]
@@ -104,5 +116,33 @@ def make_hdf5_dataframe(
                 hdf5_df["Bphi"] = -hdf5_df.Bx * np.sin(hdf5_df.phi) + hdf5_df.By * np.cos(
                     hdf5_df.phi
                 )
+    if not return_file:
+        return hdf5_df
 
-    return hdf5_df
+    return hdf5_df, file
+
+
+class SPHData:
+
+    """A class that includes data read from an HDF5 output (designed for PHANTOM at this point)"""
+
+    def __init__(self, file_path: str, extra_file_keys: Optional[list] = None):
+        self.data, file = make_hdf5_dataframe(
+            file_path, extra_file_keys=extra_file_keys, return_file=True
+        )
+        self.params = {}
+        self.params["nsink"] = len(file["sinks"]["m"][()])
+        for key in list(file["header"].keys()):
+            self.params[key] = file["header"][key][()]
+
+        sinks = {}
+        sinks["m"] = file["sinks"]["m"][()]
+        sinks["maccr"] = file["sinks"]["maccreted"][()]
+        sinks["x"] = file["sinks"]["xyz"][()][:, 0]
+        sinks["y"] = file["sinks"]["xyz"][()][:, 1]
+        sinks["z"] = file["sinks"]["xyz"][()][:, 2]
+        sinks["vx"] = file["sinks"]["vxyz"][()][:, 0]
+        sinks["vy"] = file["sinks"]["vxyz"][()][:, 1]
+        sinks["vz"] = file["sinks"]["vxyz"][()][:, 2]
+
+        self.sink_data = pd.DataFrame(sinks)
