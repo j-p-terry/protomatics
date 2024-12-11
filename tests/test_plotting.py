@@ -162,8 +162,9 @@ def test_series_plots(scatter):
 
 
 @pytest.mark.parametrize("hdf5_name", ["test_hdf5.h5"])
-def test_rendering(file):
-    sphdata = SPHData(file)
+def test_rendering(hdf5_name):
+    path = f"./tests/data/{hdf5_name}"
+    sphdata = SPHData(path)
 
     print("Testing without interpolation")
     render_value(sphdata.data, "m", x_bounds=(-10, 10), y_bounds=(-10, 10))
