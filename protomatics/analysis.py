@@ -12,6 +12,7 @@ from .constants import au_pc
 from .data import make_hdf5_dataframe
 from .helpers import cylindrical_to_cartesian
 from .plotting import basic_image_plot, plot_wcs_data
+from .rendering import sph_smoothing
 
 ##############################################################
 ##############################################################
@@ -338,6 +339,8 @@ def make_interpolated_grid(
     xaxis: str = "x",
     yaxis: str = "y",
     interpolation_method: str = "linear",
+    zmax: float = 6.0,
+    nz: float = 100.0,
 ) -> Union[np.ndarray, tuple]:
     """Makes an interpolated grid of a given value in a dataframe
     interpolation_method is ["linear", "nearest", or "cubic"]
@@ -361,13 +364,36 @@ def make_interpolated_grid(
     gr, gphi, gx, gy = make_grids(r_min=rmin, r_max=rmax, num_r=grid_size)
 
     # Interpolate using griddata
-    interpolated_grid = griddata(
-        (dataframe[xaxis].to_numpy(), dataframe[yaxis].to_numpy()),
-        dataframe[interpolate_value].to_numpy(),
-        (gx, gy),
-        method=interpolation_method,
-        fill_value=0.0,
-    )
+    if interpolation_method != "sph":
+        interpolated_grid = griddata(
+            (dataframe[xaxis].to_numpy(), dataframe[yaxis].to_numpy()),
+            dataframe[interpolate_value].to_numpy(),
+            (gx, gy),
+            method=interpolation_method,
+            fill_value=0.0,
+        )
+    else:
+        if xaxis == "x" and yaxis == "y":
+            zaxis = "z"
+        elif xaxis == "x":
+            zaxis = "y"
+        else:
+            zaxis = "x"
+
+        _, _, interpolated_grid = sph_smoothing(
+            dataframe,
+            interpolate_value,
+            (np.min(gx), np.max(gx)),
+            (np.min(gy), np.max(gy)),
+            integrate=False,
+            nx=grid_size,
+            ny=grid_size,
+            x_axis=xaxis,
+            y_axis=yaxis,
+            zmax=zmax,
+            nz=nz,
+            z_axis=zaxis,
+        )
     if not return_grids:
         return interpolated_grid
     return interpolated_grid, (gr, gphi, gx, gy)
@@ -573,7 +599,11 @@ def get_annulus_toomre(
 
 
 def compute_local_surface_density(
-    sdf: sn.SarracenDataFrame, dr: float = 0.25, dphi: float = np.pi / 18
+    sdf: sn.SarracenDataFrame,
+    dr: float = 0.25,
+    dphi: float = np.pi / 18,
+    uarea: Optional[float] = None,
+    particle_mass: Optional[float] = None,
 ) -> np.ndarray:
     """
     Compute the local vertically integrated surface density from SPH particle data.
@@ -589,8 +619,10 @@ def compute_local_surface_density(
     Returns:
         numpy array of surface density in CGS units
     """
-    uarea = sdf.params["umass"] / (sdf.params["udist"] ** 2)
-    particle_mass = sdf.params["mass"]
+    if uarea is None:
+        uarea = sdf.params["umass"] / (sdf.params["udist"] ** 2)
+    if particle_mass is None:
+        particle_mass = sdf.params["mass"]
     cols = sdf.columns
     if "r" not in cols:
         sdf["r"] = np.sqrt(sdf["x"] ** 2.0 + sdf["y"] ** 2.0)

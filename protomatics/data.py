@@ -4,6 +4,8 @@ import h5py
 import numpy as np
 import pandas as pd
 
+from .analysis import compute_local_surface_density
+
 
 def make_ev_dataframe(file_path: str) -> pd.DataFrame:
     """Reads in a PHANTOM .ev file and returns a pandas dataframe"""
@@ -170,3 +172,31 @@ class SPHData:
 
         self.sink_data = make_sink_dataframe(None, file)
         self.params = get_run_params
+
+        self.params["usdensity"] = self.params["umass"] / (self.params["udist"] ** 2)
+        self.params["udensity"] = self.params["umass"] / (self.params["udist"] ** 3)
+        self.params["uvol"] = self.params["udist"] ** 3.0
+        self.params["uarea"] = self.params["udist"] ** 2.0
+        self.params["uvel"] = self.params["udist"] / self.params["utime"]
+
+        if type(self.params["massoftype"]) == np.ndarray:
+            self.params["mass"] = self.params["massoftype"][0]
+        else:
+            self.params["mass"] = self.params["massoftype"]
+
+        self.data["m"] = self.params["mass"] * np.ones_like(self.data["x"].to_numpy())
+
+    def add_surface_density(
+        self,
+        dr: float = 0.1,
+        dphi: float = np.pi / 20,
+    ):
+        """Compuates surface density in r, phi bins and converts to cgs"""
+        sigma = compute_local_surface_density(
+            self.data.copy(),
+            dr=dr,
+            dphi=dphi,
+            uarea=self.params["uarea"],
+            particle_mass=self.params["mass"],
+        )
+        self.data["sigma"] = sigma

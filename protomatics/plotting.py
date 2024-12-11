@@ -821,7 +821,7 @@ def mesh_image(
     tick_font = kwargs.get("tick_font", ticks)
     legend_font = kwargs.get("legend_font", legends)
     # override default figure size
-    figsize = kwargs.get("figsize", (14.0, 10.5))
+    figsize = kwargs.get("figsize", (10.5, 10.0))
     # override default colormaps
     plot_cmap = kwargs.get("cmap", cmap)
     contour_lw = kwargs.get("lw", lw)
@@ -844,7 +844,7 @@ def mesh_image(
     if logy:
         plt.yscale("log")
 
-    cbar = plt.colorbar(mesh, fraction=0.045, pad=0.005)
+    cbar = plt.colorbar(mesh, fraction=0.05, pad=0.005)
     cbar.ax.set_ylabel(cbar_units, rotation=270, fontsize=legend_font)
     cbar.ax.tick_params(labelsize=tick_font)
     cbar.ax.get_yaxis().labelpad = 40

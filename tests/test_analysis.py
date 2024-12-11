@@ -12,15 +12,20 @@ from protomatics.analysis import (
     calculate_doppler_flip,
     calculate_fourier_amps,
     get_code_units,
-    get_Q_toomre,
     get_wiggle_amplitude,
-    make_ev_dataframe,
     make_grids,
-    make_hdf5_dataframe,
     make_interpolated_grid,
     make_peak_vel_map,
 )
+from protomatics.data import (
+    SPHData,
+    get_run_params,
+    make_ev_dataframe,
+    make_hdf5_dataframe,
+    make_sink_dataframe,
+)
 from protomatics.moments import calculate_keplerian_moment1, extract_wiggle, make_moments
+from protomatics.rendering import sph_smoothing
 
 
 @pytest.mark.parametrize("fits_name", ["test_3d_cube.fits", "test_6d_cube.fits"])
@@ -144,7 +149,7 @@ def test_hdf5(hdf5_name):
     print("Loading with extra information")
     hdf5_df = make_hdf5_dataframe(
         path,
-        extra_file_keys=["h", "dt", "eta_AD", "Bxyz"],
+        extra_file_keys=["dt", "eta_AD", "Bxyz"],
     )
     print("Loading with sink/header information")
     hdf5_df = make_hdf5_dataframe(
@@ -152,34 +157,22 @@ def test_hdf5(hdf5_name):
         extra_file_keys=["m", "massoftype", "u"],
     )
 
-    print("Testing Toomre Q")
+    _ = make_sink_dataframe(path)
+    _ = get_run_params(path)
+    _ = SPHData(path)
+
     code_units = get_code_units(path, extra_values=["gamma"])
     udist = code_units["udist"]
     umass = code_units["umass"]
     utime = code_units["utime"]
     code_units["uG"] = udist**3 / (umass * utime**2)
     code_units["uenergy"] = umass * (udist / utime) ** 2
-    r_annulus = 25.0
-
-    print("Testing Q at (r, phi)")
-    _ = get_Q_toomre(
-        hdf5_df,
-        r_annulus,
-        gamma=code_units["gamma"],
-        code_units=code_units,
-    )
-
-    print("Testing azimuthal average Q at (r)")
-    _ = get_Q_toomre(
-        hdf5_df,
-        r_annulus,
-        gamma=code_units["gamma"],
-        code_units=code_units,
-        az_avg=True,
-    )
 
     print("Testing grid with loaded frame")
     _ = make_interpolated_grid(dataframe=hdf5_df, grid_size=200)
+
+    _ = sph_smoothing(hdf5_df, "m", (-10, 10), (-10, 10))
+    _ = sph_smoothing(hdf5_df, "m", (-10, 10), (-10, 10), integrate=False)
 
     print("Testing grid with no loaded frame and different axis")
     _ = make_interpolated_grid(dataframe=None, file_path=path, grid_size=200, yaxis="z")
