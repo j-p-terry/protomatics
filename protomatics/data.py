@@ -47,6 +47,7 @@ def make_hdf5_dataframe(
 
     # basic information that is always loaded
     basic_keys = [
+        "iorig",
         "x",
         "y",
         "z",
@@ -64,6 +65,7 @@ def make_hdf5_dataframe(
     hdf5_df = pd.DataFrame(columns=basic_keys)
 
     # make basic information
+    hdf5_df["iorig"] = file["particles"]["iorig"][:]
     xyzs = file["particles/xyz"][:]
     vxyzs = file["particles/vxyz"][:]
     hdf5_df["x"] = xyzs[:, 0]
@@ -102,6 +104,7 @@ def make_hdf5_dataframe(
                     continue
             # value isn't anywhere
             if key not in file["particles"].keys():
+                print(f"{key} not in file!")
                 continue
             # only add if each entry is a scalar
             if len(file[f"particles/{key}"][:].shape) == 1:
