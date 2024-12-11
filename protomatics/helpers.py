@@ -4,7 +4,6 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
-import sarracen as sn
 
 from .constants import au_pc, c, c_kms, jansky
 
@@ -133,7 +132,7 @@ def get_r_bins(
 
 
 def get_phi_bins(
-    sdf: sn.SarracenDataFrame,
+    sdf: pd.DataFrame,
     phimin: float = -np.pi,
     phimax: float = np.pi,
     dphi: float = np.pi / 20.0,
