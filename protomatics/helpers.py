@@ -211,6 +211,8 @@ def sph_array_kernel(r, h, is_3d: bool = False, normalize: bool = True):
     Parameters:
         r (np.ndarray): Distances between particle and grid center.
         h (np.ndarray): Smoothing lengths (one per particle).
+        is_3d (bool): use 3d normalization
+        normalize (bool): normalize kernel across area/sphere (use if not averaging)
 
     Returns:
         np.ndarray: Kernel values for each distance and smoothing length.
