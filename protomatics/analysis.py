@@ -9,6 +9,7 @@ from astropy.io import fits
 from scipy.interpolate import griddata
 
 from .constants import au_pc
+from .data import make_hdf5_dataframe
 from .helpers import cylindrical_to_cartesian
 from .plotting import basic_image_plot, plot_wcs_data
 
@@ -327,109 +328,6 @@ def get_wiggle_amplitude(
     return coeff * np.sqrt(diff_length / ref_length)
 
 
-def make_ev_dataframe(file_path: str) -> pd.DataFrame:
-    """Reads in a PHANTOM .ev file and returns a pandas dataframe"""
-
-    # load the data
-    ev_df = pd.read_csv(file_path, sep=r"\s+", header=None, skiprows=1)
-
-    # get the column names
-    with open(file_path) as f:
-        line = f.readline()
-
-    # PHANTOM ev files start with # and columns are bracketed with [...]
-    header_ = line.split("[")[1:]
-    header = []
-    for x in header_:
-        y = x.split()[1:]
-        name = ""
-        while len(y) > 0:
-            name += y[0]
-            name += "_"
-            y = y[1:]
-        # column ends with ] and there's an extra _
-        name = name[:-2]
-        header.append(name)
-
-    # assign header to dataframe
-    ev_df.columns = header
-
-    return ev_df
-
-
-def make_hdf5_dataframe(
-    file_path: str,
-    extra_file_keys: Optional[list] = None,
-) -> pd.DataFrame:
-    """Reads an HDF5 file and returns a dataframe with the variables in file_keys"""
-
-    # read in file
-    file = h5py.File(file_path, "r")
-
-    # basic information that is always loaded
-    basic_keys = ["x", "y", "z", "vz", "vy", "vz", "r", "phi", "vr", "vphi"]
-
-    # initialize dataframe
-    hdf5_df = pd.DataFrame(columns=basic_keys)
-
-    # make basic information
-    xyzs = file["particles/xyz"][:]
-    vxyzs = file["particles/vxyz"][:]
-    hdf5_df["x"] = xyzs[:, 0]
-    hdf5_df["y"] = xyzs[:, 1]
-    hdf5_df["z"] = xyzs[:, 2]
-    hdf5_df["r"] = np.sqrt(hdf5_df.x**2 + hdf5_df.y**2)
-    hdf5_df["phi"] = np.arctan2(hdf5_df.y, hdf5_df.x)
-    hdf5_df["vx"] = vxyzs[:, 0]
-    hdf5_df["vy"] = vxyzs[:, 1]
-    hdf5_df["vz"] = vxyzs[:, 2]
-    hdf5_df["vphi"] = -hdf5_df.vx * np.sin(hdf5_df.phi) + hdf5_df.vy * np.cos(hdf5_df.phi)
-    hdf5_df["vr"] = hdf5_df.vx * np.cos(hdf5_df.phi) + hdf5_df.vy * np.sin(hdf5_df.phi)
-
-    # add any extra information if you want and can
-    if extra_file_keys is not None:
-        for key in extra_file_keys:
-            # don't get a value we've already used
-            if key in hdf5_df.columns:
-                continue
-            # can also grab sink information
-            if key in file["sinks"] and key not in file["particles"].keys():
-                for i in range(len(file[f"sinks/{key}"])):
-                    # sink values are a scalar, so we repeat over the entire dataframe
-                    hdf5_df[f"{key}_{i}"] = np.repeat(file[f"sinks/{key}"][i], hdf5_df.shape[0])
-                    continue
-            # might be in header
-            elif (
-                key in file["header"]
-                and key not in file["particles"].keys()
-                and key not in hdf5_df.columns
-            ):
-                for i in range(len(file[f"header/{key}"])):
-                    # sink values are a scalar, so we repeat over the entire dataframe
-                    hdf5_df[f"{key}_{i}"] = np.repeat(file[f"header/{key}"][i], hdf5_df.shape[0])
-                    continue
-            # value isn't anywhere
-            if key not in file["particles"].keys():
-                continue
-            # only add if each entry is a scalar
-            if len(file[f"particles/{key}"][:].shape) == 1:
-                hdf5_df[key] = file[f"particles/{key}"][:]
-            # if looking for components
-            if key == "Bxyz":
-                bxyzs = file["particles/Bxyz"][:]
-                hdf5_df["Bx"] = bxyzs[:, 0]
-                hdf5_df["By"] = bxyzs[:, 1]
-                hdf5_df["Bz"] = bxyzs[:, 2]
-                hdf5_df["Br"] = hdf5_df.Bx * np.cos(hdf5_df.phi) + hdf5_df.By * np.sin(
-                    hdf5_df.phi
-                )
-                hdf5_df["Bphi"] = -hdf5_df.Bx * np.sin(hdf5_df.phi) + hdf5_df.By * np.cos(
-                    hdf5_df.phi
-                )
-
-    return hdf5_df
-
-
 def make_interpolated_grid(
     dataframe: Optional[pd.DataFrame] = None,
     grid_size: int = 600,
@@ -473,83 +371,6 @@ def make_interpolated_grid(
     if not return_grids:
         return interpolated_grid
     return interpolated_grid, (gr, gphi, gx, gy)
-
-
-def get_Q_toomre(
-    dataframe: pd.DataFrame,
-    r_annulus: float,
-    dr: float = 1.0,
-    phi: float = np.pi / 2.0,
-    dphi: float = np.pi / 10.0,
-    gamma: float = 5.0 / 3.0,
-    mass_key: str = "massoftype_0",
-    az_avg: bool = False,
-    m_star: Optional[float] = 1.0,
-    code_units: dict = {},
-    G: float = 1.0,
-) -> tuple:
-    """Gets Toomre Q at a given r, phi. Can optionally do azimuthal average
-    Returns Q along with Sigma and the squared sound speeds.
-    Uses same method as SPLASH
-    """
-
-    # get annulus
-    dataframe = dataframe[np.abs(dataframe["r"] - r_annulus) <= dr]
-
-    # get relevant azimuths
-    # azimuthal average just gets every angle
-    if az_avg:
-        dphi = 2.0 * np.pi
-        phi_df = dataframe
-    else:
-        phi_df = dataframe[np.abs(dataframe["phi"] - phi) <= dphi]
-
-    # find mass within annulus
-    M = np.sum(phi_df[mass_key])
-    # internal energy for each particle
-    ui_s = phi_df["u"].to_numpy()
-    #  convert to CGS
-    if "uenergy" in code_units:
-        ui_s *= code_units["uenergy"]
-    # get squared sound speed for each particle
-    cs_sqs = 2.0 / 3.0 * ui_s.copy() if gamma == 1.0 else (gamma - 1.0) * gamma * ui_s.copy()
-
-    # convert to CGS
-    if "umass" in code_units:
-        M *= code_units["umass"]
-
-    # convert to CGS
-    if "udist" in code_units:
-        r_annulus *= code_units["udist"]
-        dr *= code_units["udist"]
-
-    # get RMS sound speed
-    rms_cs = np.sqrt(np.mean(cs_sqs))
-
-    # get surface density
-    sigma = M / ((r_annulus + 0.5 * dr) ** 2 - (r_annulus - 0.5 * dr) ** 2)
-    # account for azimuthal area contribution
-    sigma /= dphi / 2.0
-    # sigma /= np.pi
-
-    # read in the star mass if it's there
-    if "m_0" in dataframe.columns:
-        m_star = np.unique(dataframe["m_0"].to_numpy())[0]
-
-    # convert to CGS
-    if "umass" in code_units:
-        m_star *= code_units["umass"]
-
-    # convert to CGS
-    if "uG" in code_units:
-        G *= code_units["uG"]
-
-    # assume Keplerian frequency
-    omega_kep = np.sqrt(G * m_star / (r_annulus**3.0))
-
-    Q = rms_cs * omega_kep / (np.pi * sigma)
-
-    return Q, sigma, cs_sqs
 
 
 def calculate_doppler_flip(

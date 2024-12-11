@@ -11,7 +11,13 @@ from astropy.wcs import WCS
 from colorspacious import cspace_converter
 from matplotlib import colormaps as mplcm
 from matplotlib import rc as mplrc
-from matplotlib.colors import LinearSegmentedColormap, ListedColormap, LogNorm, SymLogNorm
+from matplotlib.colors import (
+    LinearSegmentedColormap,
+    ListedColormap,
+    LogNorm,
+    Normalize,
+    SymLogNorm,
+)
 from matplotlib.patches import Ellipse
 
 ##############################################################
@@ -205,7 +211,7 @@ def plot_wcs_data(
         plot_data[np.abs(plot_data) <= mask_value] = 0.0
 
     # make a log normalizer
-    norm = LogNorm(vmin, vmax) if log else None
+    norm = LogNorm(vmin, vmax) if log else Normalize(vmin, vmax)
     # do a symmetric log normalizer with a linear threshold as a fraction (if < 0) or given value (> 0)
     norm = (
         norm
@@ -218,19 +224,13 @@ def plot_wcs_data(
     )
 
     # plot
-    if log:
-        plt.imshow(
-            plot_data, origin="lower", cmap=plot_cmap, norm=norm, interpolation=interpolation
-        )
-    else:
-        plt.imshow(
-            plot_data,
-            origin="lower",
-            cmap=plot_cmap,
-            vmin=vmin,
-            vmax=vmax,
-            interpolation=interpolation,
-        )
+    plt.imshow(
+        plot_data,
+        origin="lower",
+        cmap=plot_cmap,
+        norm=norm,
+        interpolation=interpolation,
+    )
 
     cbar = plt.colorbar(fraction=0.045, pad=0.005)
     cbar.ax.set_ylabel(plot_units, rotation=270, fontsize=legend_font)
@@ -634,13 +634,10 @@ def basic_image_plot(
     fig = plt.figure(figsize=figsize)
 
     # make a log normalizer
-    norm = LogNorm(vmin, vmax) if log else None
+    norm = LogNorm(vmin, vmax) if log else Normalize(vmin, vmax)
 
     # plot
-    if log:
-        im = plt.imshow(data, origin="lower", cmap=plot_cmap, norm=norm)
-    else:
-        im = plt.imshow(data, origin="lower", cmap=plot_cmap, vmin=vmin, vmax=vmax)
+    im = plt.imshow(data, origin="lower", cmap=plot_cmap, norm=norm)
 
     cbar = fig.colorbar(im, fraction=0.045, pad=0.025, extend="both")
     cbar.ax.set_ylabel(cbar_label, rotation=270, fontsize=legend_font, labelpad=0.05)
@@ -791,6 +788,105 @@ def plot_series(
         plt.close()
 
 
+def mesh_image(
+    X: np.ndarray,
+    Y: np.ndarray,
+    data: np.ndarray,
+    log: bool = False,
+    symlog: bool = False,
+    linthresh: float = 1e-5,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    save: bool = False,
+    savename: str = "mesh.pdf",
+    logx: bool = False,
+    logy: bool = False,
+    cbar_units: str = "",
+    x_label: str = "x",
+    y_label: str = "y",
+    levels: Optional[tuple] = None,
+    contour_color: str = "white",
+    contour_label: str = "",
+    contour_cmap: str = "grays",
+    show: bool = False,
+    streamlines: Optional[tuple] = None,
+    arrowsize: float = 2.0,
+    arrowstyle: str = "->",
+    arrowcolor: str = "white",
+    arrowwidth: float = 1.0,
+    **kwargs,
+):
+    # get font information if given
+    label_font = kwargs.get("label_font", labels)
+    tick_font = kwargs.get("tick_font", ticks)
+    legend_font = kwargs.get("legend_font", legends)
+    # override default figure size
+    figsize = kwargs.get("figsize", (14.0, 10.5))
+    # override default colormaps
+    plot_cmap = kwargs.get("cmap", cmap)
+    contour_lw = kwargs.get("lw", lw)
+
+    plt.figure(figsize=figsize)
+
+    norm = LogNorm(vmin, vmax) if log else Normalize(vmin, vmax)
+    norm = SymLogNorm(linthresh, vmin, vmax) if symlog else norm
+
+    mesh = plt.pcolormesh(
+        X,
+        Y,
+        data,
+        cmap=plot_cmap,
+        norm=norm,
+    )
+
+    if logx:
+        plt.xscale("log")
+    if logy:
+        plt.yscale("log")
+
+    cbar = plt.colorbar(mesh, fraction=0.045, pad=0.005)
+    cbar.ax.set_ylabel(cbar_units, rotation=270, fontsize=legend_font)
+    cbar.ax.tick_params(labelsize=tick_font)
+    cbar.ax.get_yaxis().labelpad = 40
+
+    if levels is not None:
+        plt.contour(
+            X,
+            Y,
+            data,
+            levels=list(levels),
+            colors=contour_color,
+            linewidths=contour_lw,
+            label=contour_label,
+            cmap=contour_cmap,
+        )
+    if streamlines is not None:
+        ax = plt.gca()
+        ax.streamplot(
+            X,
+            Y,
+            streamlines[0],
+            streamlines[1],
+            color=arrowcolor,
+            linewidth=arrowwidth,
+            arrowsize=arrowsize,
+            arrowstyle=arrowstyle,
+        )
+
+    plt.xticks(fontsize=tick_font)
+    plt.yticks(fontsize=tick_font)
+
+    plt.xlabel(x_label, fontsize=label_font)
+    plt.ylabel(y_label, fontsize=label_font)
+
+    if save:
+        plt.savefig(savename)
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+
 def hex_to_rgb(value):
     """Convert hex to RGB values in the range [0, 1]."""
     value = value.lstrip("#")
@@ -798,7 +894,9 @@ def hex_to_rgb(value):
     return tuple(int(value[i : i + lv // 3], 16) / 255.0 for i in range(0, lv, lv // 3))
 
 
-def create_perceptually_uniform_cmap(start_color: list, end_color: list, N: int = 256):
+def create_perceptually_uniform_cmap(
+    start_color: list, end_color: list, N: int = 256, return_color=False
+):
     if type(start_color) is str:
         start_color = (
             hex_to_rgb(start_color) if "#" in start_color else mcolors.to_rgb(start_color)
@@ -819,6 +917,20 @@ def create_perceptually_uniform_cmap(start_color: list, end_color: list, N: int 
 
     # Ensure all RGB values are within the valid range [0, 1]
     rgb_colors = np.clip(rgb_colors, 0, 1)
+    if return_color:
+        return rgb_colors
 
     # Create and return the colormap
     return LinearSegmentedColormap.from_list("custom_colormap", rgb_colors)
+
+
+def create_diverging_cmap(start_color: list, middle_color: list, end_color: list, N: int = 256):
+    first_map = create_perceptually_uniform_cmap(
+        start_color, middle_color, N=N, return_color=True
+    )
+    second_map = create_perceptually_uniform_cmap(middle_color, end_color, N=N, return_color=True)
+
+    # combine them and build a new colormap
+    combined = np.vstack((first_map, second_map))
+
+    return LinearSegmentedColormap.from_list("diverging_colormap", combined)
