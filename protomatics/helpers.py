@@ -106,29 +106,12 @@ def get_r_bins(
     sdf: pd.DataFrame,
     rmin: Optional[float] = None,
     rmax: Optional[float] = None,
-    dr: float = 0.5,
+    dr: float = 0.25,
     nr: Optional[int] = None,
     return_rs: bool = False,
 ):
     """Bins into discrete radial regions"""
-
-    if "r" not in sdf.columns:
-        sdf["r"] = np.sqrt(sdf.x**2 + sdf.y**2)
-    rmin = np.min(sdf.r) if rmin is None else rmin
-    rmax = np.max(sdf.r) if rmax is None else rmax
-    rs = np.linspace(rmin, rmax, nr) if nr is not None else np.arange(rmin, rmax, dr)
-    dr = dr if dr is not None else np.abs(rs[1] - rs[0])
-    # Define the edges of the bins
-    bin_edges = np.append(
-        rs - dr / 2,
-        rs[-1] + dr / 2,
-    )
-    # Assign each particle to a radial bin
-    sdf["r_bin"] = pd.cut(sdf["r"], bins=bin_edges, labels=rs, include_lowest=True)
-
-    if return_rs:
-        return sdf, rs
-    return sdf
+    return get_bins(sdf, value="r", vmin=rmin, vmax=rmax, dval=dr, nval=nr, return_vals=return_rs)
 
 
 def get_phi_bins(
@@ -140,22 +123,50 @@ def get_phi_bins(
     return_phis: bool = False,
 ):
     """Bins into discrete azimuthal regions"""
-    if "phi" not in sdf.columns:
-        sdf["phi"] = np.arctan2(sdf.y, sdf.x)
-    phis = (
-        np.linspace(phimin, phimax, nphi) if nphi is not None else np.arange(phimin, phimax, dphi)
+    return get_bins(
+        sdf, value="phi", vmin=phimin, vmax=phimax, dval=dphi, nval=nphi, return_vals=return_phis
     )
-    dphi = dphi if dphi is not None else np.abs(phis[1] - phis[0])
+
+
+def get_z_bins(
+    sdf: pd.DataFrame,
+    zmin: float = -10,
+    zmax: float = 10,
+    dz: float = 0.25,
+    nz: Optional[int] = None,
+    return_zs: bool = False,
+):
+    """Bins into discrete azimuthal regions"""
+    return get_bins(sdf, value="z", vmin=zmin, vmax=zmax, dval=dz, nval=nz, return_vals=return_zs)
+
+
+def get_bins(
+    sdf: pd.DataFrame,
+    value: str = "r",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    dval: Optional[float] = None,
+    nval: Optional[int] = 100,
+    return_vals: bool = False,
+):
+    """Bins into discrete regions"""
+    if value not in sdf.columns:
+        if value == "phi":
+            sdf["phi"] = np.arctan2(sdf.y, sdf.x)
+        elif value == "r":
+            sdf["r"] = np.sqrt(sdf.x**2 + sdf.y**2)
+    vals = np.linspace(vmin, vmax, nval) if nval is not None else np.arange(vmin, vmax, dval)
+    dval = dval if dval is not None else np.abs(dval[1] - dval[0])
     # Define the edges of the bins
     bin_edges = np.append(
-        phis - dphi / 2,
-        phis[-1] + dphi / 2,
+        vals - dval / 2,
+        vals[-1] + dval / 2,
     )
     # Assign each particle to a radial bin
-    sdf["phi_bin"] = pd.cut(sdf["phi"], bins=bin_edges, labels=phis, include_lowest=True)
+    sdf[f"{value}_bin"] = pd.cut(sdf[value], bins=bin_edges, labels=vals, include_lowest=True)
 
-    if return_phis:
-        return sdf, phis
+    if return_vals:
+        return sdf, vals
     return sdf
 
 
