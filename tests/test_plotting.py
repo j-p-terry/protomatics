@@ -8,6 +8,7 @@ from astropy.io import fits
 # Add the parent directory to the Python path
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
+from protomatics.data import SPHData
 from protomatics.moments import make_moments
 from protomatics.plotting import (
     get_wiggle_from_contour,
@@ -16,6 +17,7 @@ from protomatics.plotting import (
     plot_wcs_data,
     polar_plot,
 )
+from protomatics.rendering import render_value
 
 
 @pytest.mark.parametrize(
@@ -155,5 +157,23 @@ def test_series_plots(scatter):
             hlines=hlines,
             plot_labels=plot_labels,
         )
+
+    print("Passed!")
+
+
+@pytest.mark.parametrize("hdf5_name", ["test_hdf5.h5"])
+def test_rendering(file):
+    sphdata = SPHData(file)
+
+    print("Testing without interpolation")
+    render_value(sphdata.data, "m", x_bounds=(-10, 10), y_bounds=(-10, 10))
+
+    print("Testing streamlines")
+    render_value(
+        sphdata.data, "m", x_bounds=(-10, 10), y_bounds=(-10, 10), streamlines=("vx", "vy")
+    )
+
+    print("Testing with SPH interpolation")
+    render_value(sphdata.data, "m", interpolate="sph", x_bounds=(-10, 10), y_bounds=(-10, 10))
 
     print("Passed!")
