@@ -366,7 +366,7 @@ def render_value(
     data *= scale_data
 
     value_label = value if value_label is None else value_label
-    value_label = rf"{value_label} [{units}]"
+    value_label = rf"{value_label} [{units}]" if units != "" else rf"{value_label}"
 
     if streamlines is not None:
         stream_grids = []
