@@ -166,10 +166,6 @@ def get_run_params(file_path: str, file: h5py._hl.files.File = None):
 
 
 class PhantomFileReader:
-    """
-    Reads in phantom binary data dump
-    """
-
     def __init__(self, filename: str):
         self.filename = filename
         self.fp = None
@@ -195,66 +191,100 @@ class PhantomFileReader:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._close_file()
 
-    def _read_block(self, size: int) -> bytes:
+    def _read_fortran_block(self, size: int) -> bytes:
         start_tag = self.fp.read(4)
         data = self.fp.read(size)
         end_tag = self.fp.read(4)
         if start_tag != end_tag:
-            raise RuntimeError("Fortran block size tags do not match.")
+            raise RuntimeError("Fortran block boundary mismatch.")
         return data
 
-    def _identify_precision(self):
-        candidates = [
+    def _read_capture_pattern(self):
+        start_tag = self.fp.read(4)
+        def_types = [
             (np.int32, np.float64),
             (np.int32, np.float32),
             (np.int64, np.float64),
             (np.int64, np.float32),
         ]
 
-        initial_pos = self.fp.tell()
-
-        for int_type, float_type in candidates:
-            self.fp.seek(initial_pos)
-            start_tag = self.fp.read(4)
-            try:
-                i1 = np.frombuffer(
-                    self.fp.read(np.dtype(int_type).itemsize), dtype=int_type, count=1
-                )[0]
-                r1 = np.frombuffer(
-                    self.fp.read(np.dtype(float_type).itemsize), dtype=float_type, count=1
-                )[0]
-                i2 = np.frombuffer(
-                    self.fp.read(np.dtype(int_type).itemsize), dtype=int_type, count=1
-                )[0]
-                np.frombuffer(self.fp.read(np.dtype(int_type).itemsize), dtype=int_type, count=1)[
-                    0
-                ]
-                i3 = np.frombuffer(
-                    self.fp.read(np.dtype(int_type).itemsize), dtype=int_type, count=1
-                )[0]
-                end_tag = self.fp.read(4)
-            except Exception:
-                continue
+        i1 = r1 = i2 = 0
+        for def_int_dtype, def_real_dtype in def_types:
+            i1 = np.frombuffer(
+                self.fp.read(np.dtype(def_int_dtype).itemsize), dtype=def_int_dtype, count=1
+            )[0]
+            r1 = np.frombuffer(
+                self.fp.read(np.dtype(def_real_dtype).itemsize), dtype=def_real_dtype, count=1
+            )[0]
+            i2 = np.frombuffer(
+                self.fp.read(np.dtype(def_int_dtype).itemsize), dtype=def_int_dtype, count=1
+            )[0]
 
             if (
-                i1 == int_type(60769)
-                and i2 == int_type(60878)
-                and float_type(i2) == r1
-                and i3 == int_type(690706)
-                and start_tag == end_tag
+                i1 == def_int_dtype(60769)
+                and i2 == def_int_dtype(60878)
+                and r1 == def_real_dtype(i2)
             ):
-                self.int_dtype = int_type
-                self.real_dtype = float_type
-                return
+                self.int_dtype = def_int_dtype
+                self.real_dtype = def_real_dtype
+                break
+            # else:
+            # rewind
+            self.fp.seek(-def_int_dtype().itemsize, 1)
+            self.fp.seek(-def_real_dtype().itemsize, 1)
+            self.fp.seek(-def_int_dtype().itemsize, 1)
 
-        raise ValueError("Failed to detect int/float precision. Not a valid Phantom file?")
+        if (
+            i1 != self.int_dtype(60769)
+            or i2 != self.int_dtype(60878)
+            or r1 != self.real_dtype(i2)
+        ):
+            raise RuntimeError(
+                "Could not determine default int/float precision. Not a Phantom file?"
+            )
 
-    def _read_file_id(self):
-        block = self._read_block(100)
+        # version
+        np.frombuffer(
+            self.fp.read(np.dtype(self.int_dtype).itemsize), dtype=self.int_dtype, count=1
+        )[0]
+        i3 = np.frombuffer(
+            self.fp.read(np.dtype(self.int_dtype).itemsize), dtype=self.int_dtype, count=1
+        )[0]
+        if i3 != self.int_dtype(690706):
+            raise RuntimeError("Capture pattern error. i3 mismatch.")
+
+        end_tag = self.fp.read(4)
+        if start_tag != end_tag:
+            raise RuntimeError("Capture pattern error. Fortran tags mismatch.")
+
+    def _read_file_identifier(self):
+        block = self._read_fortran_block(100)
         self.file_identifier = block.decode("ascii").strip()
 
-    def _read_global_parameters(self):
-        candidate_types = [
+    def _rename_duplicates(self, keys):
+        seen = {}
+        for i, k in enumerate(keys):
+            if k not in seen:
+                seen[k] = 1
+            else:
+                seen[k] += 1
+                keys[i] = f"{k}_{seen[k]}"
+        return keys
+
+    def _read_global_header_block(self, dtype):
+        nvars = np.frombuffer(self._read_fortran_block(4), dtype=np.int32, count=1)[0]
+        keys = []
+        data = []
+        if nvars > 0:
+            key_block = self._read_fortran_block(16 * nvars).decode("ascii")
+            keys = [key_block[i : i + 16].strip() for i in range(0, 16 * nvars, 16)]
+            databytes = self._read_fortran_block(np.dtype(dtype).itemsize * nvars)
+            data = np.frombuffer(databytes, dtype=dtype, count=nvars)
+        return keys, data
+
+    def _read_global_header(self):
+        # Maintain exact order from sarracen logic
+        dtypes = [
             self.int_dtype,
             np.int8,
             np.int16,
@@ -265,123 +295,102 @@ class PhantomFileReader:
             np.float64,
         ]
 
-        names_combined = []
-        values_combined = []
-        for dt in candidate_types:
-            try:
-                nvars_data = self._read_block(4)
-            except RuntimeError:
-                # no more data
-                break
-            nvars = np.frombuffer(nvars_data, dtype=np.int32, count=1)[0]
-            if nvars == 0:
-                continue
-
-            name_block = self._read_block(16 * nvars).decode("ascii")
-            var_names = [name_block[i : i + 16].strip() for i in range(0, 16 * nvars, 16)]
-
-            var_data = self._read_block(np.dtype(dt).itemsize * nvars)
-            var_values = np.frombuffer(var_data, dtype=dt, count=nvars)
-
-            names_combined.extend(var_names)
-            values_combined.extend(var_values)
-
-        seen = {}
-        for i, n in enumerate(names_combined):
-            if n in seen:
-                seen[n] += 1
-                names_combined[i] = f"{n}_{seen[n]}"
-            else:
-                seen[n] = 1
-
-        for k, v in zip(names_combined, values_combined):
-            self.global_params[k] = v
-
+        keys = []
+        data = []
+        for dt in dtypes:
+            new_keys, new_data = self._read_global_header_block(dt)
+            keys += new_keys
+            data = np.append(data, new_data)
+        keys = self._rename_duplicates(keys)
+        self.global_params = dict(zip(keys, data))
         self.global_params["file_identifier"] = self.file_identifier
 
-    def _read_particle_blocks(self):
-        nblocks = np.frombuffer(self._read_block(4), dtype=np.int32, count=1)[0]
-        block_info = []
+    def _read_array_block(self, df, n, nums):
+        # Same dtype order as global parameters
+        dtypes = [
+            self.int_dtype,
+            np.int8,
+            np.int16,
+            np.int32,
+            np.int64,
+            self.real_dtype,
+            np.float32,
+            np.float64,
+        ]
+
+        for i, count in enumerate(nums):
+            dt = dtypes[i]
+            for _ in range(count):
+                tag = self._read_fortran_block(16).decode("ascii").strip()
+                # ensure unique column name
+                col_name = tag
+                ccount = 1
+                while col_name in df.columns:
+                    ccount += 1
+                    col_name = f"{tag}_{ccount}"
+                arr_data = self._read_fortran_block(np.dtype(dt).itemsize * n)
+                df[col_name] = np.frombuffer(arr_data, dtype=dt, count=n)
+        return df
+
+    def _read_array_blocks(self):
+        # number of blocks
+        nblocks = np.frombuffer(self._read_fortran_block(4), dtype=np.int32, count=1)[0]
+
+        n_list = []
+        nums_list = []
         for _ in range(nblocks):
             start_tag = self.fp.read(4)
-            n = np.frombuffer(self.fp.read(8), dtype=np.int64, count=1)[0]
+            nval = np.frombuffer(self.fp.read(8), dtype=np.int64, count=1)[0]
             nums = np.frombuffer(self.fp.read(32), dtype=np.int32, count=8)
             end_tag = self.fp.read(4)
             if start_tag != end_tag:
-                raise RuntimeError("Block header tags mismatch.")
-            block_info.append((n, nums))
-
-        arr_types = [
-            self.int_dtype,
-            np.int8,
-            np.int16,
-            np.int32,
-            np.int64,
-            self.real_dtype,
-            np.float32,
-            np.float64,
-        ]
-
-        def read_block_data(num_particles, nums_per_type):
-            df_block = pd.DataFrame()
-            for dt, count_dt in zip(arr_types, nums_per_type):
-                for _ in range(count_dt):
-                    name_raw = self._read_block(16).decode("ascii").strip()
-                    data_block = self._read_block(num_particles * np.dtype(dt).itemsize)
-                    data_arr = np.frombuffer(data_block, dtype=dt, count=num_particles)
-                    base_name = name_raw
-                    col_name = base_name
-                    ccount = 1
-                    while col_name in df_block.columns:
-                        ccount += 1
-                        col_name = f"{base_name}_{ccount}"
-                    df_block[col_name] = data_arr
-            return df_block
+                raise RuntimeError("Fortran tags mismatch in array blocks.")
+            n_list.append(nval)
+            nums_list.append(nums)
 
         main_df = pd.DataFrame()
         sink_df = pd.DataFrame()
-        for i, (n, nums) in enumerate(block_info):
-            block_df = read_block_data(n, nums)
-            if i == 1:
-                sink_df = block_df
+
+        for i in range(nblocks):
+            if i == 1:  # second block = sinks
+                sink_df = self._read_array_block(sink_df, n_list[i], nums_list[i])
             else:
-                main_df = pd.concat([main_df, block_df], ignore_index=True)
+                main_df = self._read_array_block(main_df, n_list[i], nums_list[i])
 
         self.particle_df = main_df
         self.sinks_df = sink_df
 
     def _assign_masses(self):
-        if "itype" in self.particle_df.columns:
-            if self.particle_df["itype"].nunique() > 1:
-                self.particle_df["mass"] = self.global_params.get("massoftype", np.nan)
-                for t in self.particle_df["itype"].unique():
-                    if t > 1:
-                        key = f"massoftype_{t}"
-                        if key in self.global_params:
-                            self.particle_df.loc[
-                                self.particle_df["itype"] == t, "mass"
-                            ] = self.global_params[key]
-            else:
-                self.particle_df["mass"] = self.global_params.get("massoftype", np.nan)
+        # If multiple itypes and separate_types != "all", mass may need to be assigned
+        if "itype" in self.particle_df.columns and self.particle_df["itype"].nunique() > 1:
+            # If multiple itypes in main
+            self.particle_df["mass"] = self.global_params.get("massoftype", np.nan)
+            for t in self.particle_df["itype"].unique():
+                if t > 1:
+                    key = f"massoftype_{t}"
+                    if key in self.global_params:
+                        self.particle_df.loc[
+                            self.particle_df["itype"] == t, "mass"
+                        ] = self.global_params[key]
         else:
-            self.particle_df["mass"] = self.global_params.get(
-                "massoftype", self.global_params.get("mass", np.nan)
-            )
+            # Just set a global mass if possible
+            if "massoftype" in self.global_params:
+                self.global_params["mass"] = self.global_params["massoftype"]
 
     def read(
         self,
-        separate_types: str = "sinks",
+        separate_types: Optional[str] = "sinks",
         ignore_inactive: bool = True,
-        return_params: bool = False,
+        return_params: bool = True,
     ) -> Union[
         pd.DataFrame, list[pd.DataFrame], tuple[Union[pd.DataFrame, list[pd.DataFrame]], dict]
     ]:
         self._open_file()
         try:
-            self._identify_precision()
-            self._read_file_id()
-            self._read_global_parameters()
-            self._read_particle_blocks()
+            self._read_capture_pattern()
+            self._read_file_identifier()
+            self._read_global_header()
+            self._read_array_blocks()
         finally:
             self._close_file()
 
@@ -390,42 +399,48 @@ class PhantomFileReader:
 
         self._assign_masses()
 
-        # Combine or separate dataframes according to separate_types
+        # Return logic:
         if separate_types is None:
+            # Combine main and sinks
             combined = pd.concat([self.particle_df, self.sinks_df], ignore_index=True)
-            result = combined
-        elif separate_types == "sinks":
+            if return_params:
+                return combined, self.global_params
+            return combined
+
+        if separate_types == "sinks":
+            # Return main and sinks separately
             if not self.sinks_df.empty:
-                # Assign mass to sinks if needed
-                if "itype" in self.sinks_df and self.sinks_df["itype"].nunique() > 1:
-                    # handle multiple sink species if needed
-                    self.sinks_df["mass"] = self.global_params.get("massoftype", np.nan)
-                else:
-                    self.sinks_df["mass"] = self.global_params.get("massoftype", np.nan)
-                result = [self.particle_df, self.sinks_df]
-            else:
-                result = self.particle_df
-        else:  # separate_types == "all"
-            result_dfs = []
+                if return_params:
+                    return (self.particle_df, self.sinks_df, self.global_params)
+                return (self.particle_df, self.sinks_df)
+            if return_params:
+                return self.particle_df, self.global_params
+            return self.particle_df
+
+        if separate_types == "all":
+            # Separate by itype plus sinks
+            # If multiple itypes:
             if "itype" in self.particle_df.columns and self.particle_df["itype"].nunique() > 1:
-                for _, group in self.particle_df.groupby("itype"):
-                    group_ = group.copy()
-                    result_dfs.append(group_)
-            else:
-                result_dfs.append(self.particle_df)
-
+                df_list = []
+                for _tval, group in self.particle_df.groupby("itype"):
+                    # Just separate the data, no mass recalc needed here
+                    df_list.append(group.copy())
+                if not self.sinks_df.empty:
+                    df_list.append(self.sinks_df)
+                if return_params:
+                    return df_list, self.global_params
+                return df_list
+            # else:
+            # Just one itype
+            df_list = [self.particle_df]
             if not self.sinks_df.empty:
-                if "itype" in self.sinks_df.columns and self.sinks_df["itype"].nunique() > 1:
-                    self.sinks_df["mass"] = self.global_params.get("massoftype", np.nan)
-                else:
-                    self.sinks_df["mass"] = self.global_params.get("massoftype", np.nan)
-                result_dfs.append(self.sinks_df)
-
-            result = result_dfs[0] if len(result_dfs) == 1 else result_dfs
-
-        if return_params:
-            return result, self.global_params
-        return result
+                df_list.append(self.sinks_df)
+            if return_params:
+                return df_list, self.global_params
+            return df_list
+        # else:
+        # Unknown separate_types
+        raise ValueError("Invalid value for separate_types. Choose None, 'sinks', or 'all'.")
 
 
 def read_phantom(
@@ -435,25 +450,7 @@ def read_phantom(
     return_params: bool = True,
 ):
     """
-    Convenience function to read a Phantom dump file.
-
-    Parameters
-    ----------
-    filename : str
-        The Phantom binary file to read.
-    separate_types : {"sinks", "all", None}
-        How to separate particle data into multiple DataFrames.
-    ignore_inactive : bool
-        If True, removes particles with non-positive smoothing length.
-    return_params : bool
-        If True, return the global parameters dictionary along with the particle data.
-
-    Returns
-    -------
-    data : pd.DataFrame or list of pd.DataFrame
-        Particle data as a single DataFrame or multiple DataFrames depending on separate_types.
-    params : dict (only if return_params=True)
-        Dictionary of global parameters from the file header.
+    Convenience function to use PhantomFileReader and return pandas DataFrames and params.
     """
     with PhantomFileReader(filename) as reader:
         return reader.read(
@@ -461,62 +458,3 @@ def read_phantom(
             ignore_inactive=ignore_inactive,
             return_params=return_params,
         )
-
-
-class SPHData:
-
-    """A class that includes data read from a dumpfile in binary or HDF5 (designed for PHANTOM at this point)"""
-
-    def __init__(
-        self,
-        file_path: str,
-        extra_file_keys: Optional[list] = None,
-        ignore_inactive: bool = True,
-        separate: str = "sinks",
-    ):
-        self.file_path = file_path
-
-        if ".h5" in file_path:
-            self.data, file = make_hdf5_dataframe(
-                file_path,
-                extra_file_keys=extra_file_keys,
-                return_file=True,
-            )
-
-            self.sink_data = make_sink_dataframe(None, file)
-            self.params = get_run_params(None, file)
-
-            self.params["usdensity"] = self.params["umass"] / (self.params["udist"] ** 2)
-            self.params["udensity"] = self.params["umass"] / (self.params["udist"] ** 3)
-            self.params["uvol"] = self.params["udist"] ** 3.0
-            self.params["uarea"] = self.params["udist"] ** 2.0
-            self.params["uvel"] = self.params["udist"] / self.params["utime"]
-
-            if type(self.params["massoftype"]) == np.ndarray:
-                self.params["mass"] = self.params["massoftype"][0]
-            else:
-                self.params["mass"] = self.params["massoftype"]
-        else:
-            (self.data, self.sink_data), self.params = read_phantom(
-                file_path,
-                ignore_inactive=ignore_inactive,
-                separate_types=separate,
-            )
-            self.data["iorig"] = self.data["iorig"].astype(int)
-
-    def add_surface_density(
-        self,
-        dr: float = 0.1,
-        dphi: float = np.pi / 20,
-    ):
-        from .analysis import compute_local_surface_density
-
-        """Compuates surface density in r, phi bins and converts to cgs"""
-        sigma = compute_local_surface_density(
-            self.data.copy(),
-            dr=dr,
-            dphi=dphi,
-            uarea=self.params["uarea"],
-            particle_mass=self.params["mass"],
-        )
-        self.data["sigma"] = sigma
