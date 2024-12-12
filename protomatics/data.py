@@ -4,8 +4,6 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from .analysis import compute_local_surface_density
-
 
 def make_ev_dataframe(file_path: str) -> pd.DataFrame:
     """Reads in a PHANTOM .ev file and returns a pandas dataframe"""
@@ -65,7 +63,7 @@ def make_hdf5_dataframe(
     hdf5_df = pd.DataFrame(columns=basic_keys)
 
     # make basic information
-    hdf5_df["iorig"] = file["particles"]["iorig"][:]
+    hdf5_df["iorig"] = file["particles/iorig"][:]
     xyzs = file["particles/xyz"][:]
     vxyzs = file["particles/vxyz"][:]
     hdf5_df["x"] = xyzs[:, 0]
@@ -194,6 +192,8 @@ class SPHData:
         dr: float = 0.1,
         dphi: float = np.pi / 20,
     ):
+        from .analysis import compute_local_surface_density
+
         """Compuates surface density in r, phi bins and converts to cgs"""
         sigma = compute_local_surface_density(
             self.data.copy(),
