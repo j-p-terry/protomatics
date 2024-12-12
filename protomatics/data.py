@@ -462,3 +462,66 @@ def read_phantom(
             ignore_inactive=ignore_inactive,
             return_params=return_params,
         )
+
+
+class SPHData:
+    """A class that includes data read from a dumpfile in binary or HDF5 (designed for PHANTOM at this point)"""
+
+    def __init__(
+        self,
+        file_path: str,
+        extra_file_keys: Optional[list] = None,
+        ignore_inactive: bool = True,
+        separate: str = "sinks",
+    ):
+        self.file_path = file_path
+        if ".h5" in file_path:
+            self.data, file = make_hdf5_dataframe(
+                file_path,
+                extra_file_keys=extra_file_keys,
+                return_file=True,
+            )
+            self.sink_data = make_sink_dataframe(None, file)
+            self.params = get_run_params(None, file)
+            self.params["usdensity"] = self.params["umass"] / (self.params["udist"] ** 2)
+            self.params["udensity"] = self.params["umass"] / (self.params["udist"] ** 3)
+            self.params["uvol"] = self.params["udist"] ** 3.0
+            self.params["uarea"] = self.params["udist"] ** 2.0
+            self.params["uvel"] = self.params["udist"] / self.params["utime"]
+            if type(self.params["massoftype"]) == np.ndarray:
+                self.params["mass"] = self.params["massoftype"][0]
+            else:
+                self.params["mass"] = self.params["massoftype"]
+        else:
+            self.data, self.sink_data, self.params = read_phantom(
+                file_path,
+                ignore_inactive=ignore_inactive,
+                separate_types=separate,
+            )
+            self.data["iorig"] = self.data["iorig"].astype(int)
+            self.data["r"] = np.sqrt(self.data.x**2 + self.data.y**2)
+            self.data["phi"] = np.arctan2(self.data.y, self.data.x)
+            if "Bx" in self.data.columns:
+                self.data["Br"] = self.data.Bx * np.cos(self.data.phi) + self.data.By * np.sin(
+                    self.data.phi
+                )
+                self.data["Bphi"] = -self.data.Bx * np.sin(self.data.phi) + self.data.By * np.cos(
+                    self.data.phi
+                )
+
+    def add_surface_density(
+        self,
+        dr: float = 0.1,
+        dphi: float = np.pi / 20,
+    ):
+        from .analysis import compute_local_surface_density
+
+        """Compuates surface density in r, phi bins and converts to cgs"""
+        sigma = compute_local_surface_density(
+            self.data.copy(),
+            dr=dr,
+            dphi=dphi,
+            uarea=self.params["uarea"],
+            particle_mass=self.params["mass"],
+        )
+        self.data["sigma"] = sigma
