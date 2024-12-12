@@ -80,7 +80,7 @@ def test_wcs_plot(fits_name):
         hdu,
         subtract_channels=[0, -1],
         overlay_hdu=overlay_hdu,
-        overlay_channels=[3],
+        overlay_channels=[0],
         subtract_overlay_channels=[0, -1],
         show=False,
     )

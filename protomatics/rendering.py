@@ -378,6 +378,8 @@ def render_value(
             stream_grid = griddata(points, vals, (X, Y), method=stream_bin_method)
             stream_grid = np.nan_to_num(stream_grid, nan=0.0)
             stream_grids.append(stream_grid)
+    else:
+        stream_grids = None
 
     mesh_image(
         X,

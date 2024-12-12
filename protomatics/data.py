@@ -57,7 +57,6 @@ def make_hdf5_dataframe(
         "vr",
         "vphi",
         "h",
-        "m",
     ]
 
     # initialize dataframe
@@ -79,7 +78,7 @@ def make_hdf5_dataframe(
     hdf5_df["vphi"] = -hdf5_df.vx * np.sin(hdf5_df.phi) + hdf5_df.vy * np.cos(hdf5_df.phi)
     hdf5_df["vr"] = hdf5_df.vx * np.cos(hdf5_df.phi) + hdf5_df.vy * np.sin(hdf5_df.phi)
 
-    mass = hdf5_df["header/massoftype"][:]
+    mass = file["header/massoftype"][:]
     if type(mass) == np.ndarray:
         mass = mass[0]
     hdf5_df["m"] = mass * np.ones_like(hdf5_df.x.to_numpy())
