@@ -678,8 +678,8 @@ def get_dSigma_Sigma(
     if particle_mass is None and "mass" in df.columns:
         particle_mass = df["mass"].to_numpy()[0]
 
-    sdf = get_az_avg_Sigma(df, dr=dr, dphi=dphi, particle_mass=particle_mass, usdense=usdense)
+    df = get_az_avg_Sigma(df, dr=dr, dphi=dphi, particle_mass=particle_mass, usdense=usdense)
 
-    sdf["dsigma_sigma"] = (df.sigma - df.avg_sigma) / df.sigma
+    df["dsigma_sigma"] = (df.sigma - df.avg_sigma) / df.sigma
 
-    return sdf
+    return df
