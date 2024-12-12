@@ -861,8 +861,7 @@ def mesh_image(
             cmap=contour_cmap,
         )
     if streamlines is not None:
-        ax = plt.gca()
-        ax.streamplot(
+        plt.streamplot(
             X,
             Y,
             streamlines[0],
