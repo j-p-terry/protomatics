@@ -81,7 +81,7 @@ def make_hdf5_dataframe(
     mass = file["header/massoftype"][:]
     if type(mass) == np.ndarray:
         mass = mass[0]
-    hdf5_df["m"] = mass * np.ones_like(hdf5_df.x.to_numpy())
+    hdf5_df["mass"] = mass * np.ones_like(hdf5_df.x.to_numpy())
 
     # add any extra information if you want and can
     if extra_file_keys is not None:
@@ -137,7 +137,7 @@ def make_sink_dataframe(file_path: str, file: h5py._hl.files.File = None):
         file = h5py.File(file_path, "r")
 
     sinks = {}
-    sinks["m"] = file["sinks"]["m"][()]
+    sinks["mass"] = file["sinks"]["m"][()]
     sinks["maccr"] = file["sinks"]["maccreted"][()]
     sinks["x"] = file["sinks"]["xyz"][()][:, 0]
     sinks["y"] = file["sinks"]["xyz"][()][:, 1]

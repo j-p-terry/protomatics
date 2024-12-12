@@ -167,14 +167,14 @@ def test_rendering(hdf5_name):
     sphdata = SPHData(path)
 
     print("Testing without interpolation")
-    render_value(sphdata.data, "m", x_bounds=(-10, 10), y_bounds=(-10, 10))
+    render_value(sphdata.data, "mass", x_bounds=(-10, 10), y_bounds=(-10, 10))
 
     print("Testing streamlines")
     render_value(
-        sphdata.data, "m", x_bounds=(-10, 10), y_bounds=(-10, 10), streamlines=("vx", "vy")
+        sphdata.data, "mass", x_bounds=(-10, 10), y_bounds=(-10, 10), streamlines=("vx", "vy")
     )
 
     print("Testing with SPH interpolation")
-    render_value(sphdata.data, "m", interpolate="sph", x_bounds=(-10, 10), y_bounds=(-10, 10))
+    render_value(sphdata.data, "mass", interpolate="sph", x_bounds=(-10, 10), y_bounds=(-10, 10))
 
     print("Passed!")
