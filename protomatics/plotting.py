@@ -533,8 +533,8 @@ def polar_plot(
     _, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": "polar"})
 
     if type(rs) != dict:
-        rs = dict(("", rs))
-        phis = dict(("", phis))
+        rs = {"": rs}
+        phis = {"": phis}
 
     if scatter:
         i = 0

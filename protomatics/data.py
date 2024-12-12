@@ -57,6 +57,7 @@ def make_hdf5_dataframe(
         "vr",
         "vphi",
         "h",
+        "m",
     ]
 
     # initialize dataframe
@@ -77,6 +78,11 @@ def make_hdf5_dataframe(
     hdf5_df["vz"] = vxyzs[:, 2]
     hdf5_df["vphi"] = -hdf5_df.vx * np.sin(hdf5_df.phi) + hdf5_df.vy * np.cos(hdf5_df.phi)
     hdf5_df["vr"] = hdf5_df.vx * np.cos(hdf5_df.phi) + hdf5_df.vy * np.sin(hdf5_df.phi)
+
+    mass = hdf5_df["header/massoftype"][:]
+    if type(mass) == np.ndarray:
+        mass = mass[0]
+    hdf5_df["m"] = mass * np.ones_like(hdf5_df.x.to_numpy())
 
     # add any extra information if you want and can
     if extra_file_keys is not None:
@@ -171,8 +177,10 @@ class SPHData:
             return_file=True,
         )
 
+        self.file_path = file_path
+
         self.sink_data = make_sink_dataframe(None, file)
-        self.params = get_run_params
+        self.params = get_run_params(None, file)
 
         self.params["usdensity"] = self.params["umass"] / (self.params["udist"] ** 2)
         self.params["udensity"] = self.params["umass"] / (self.params["udist"] ** 3)
@@ -184,8 +192,6 @@ class SPHData:
             self.params["mass"] = self.params["massoftype"][0]
         else:
             self.params["mass"] = self.params["massoftype"]
-
-        self.data["m"] = self.params["mass"] * np.ones_like(self.data["x"].to_numpy())
 
     def add_surface_density(
         self,
