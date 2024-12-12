@@ -10,6 +10,7 @@ from scipy.interpolate import griddata
 
 from .constants import au_pc
 from .data import make_hdf5_dataframe
+from .helpers import average_within_bins, get_r_bins
 from .plotting import basic_image_plot, plot_wcs_data
 from .rendering import sph_smoothing
 
@@ -635,3 +636,50 @@ def vr_to_mdot(
     """
 
     return 2.0 * np.pi * R * Sigma * (-vr)
+
+
+def get_az_avg_Sigma(
+    df: pd.DataFrame,
+    dr: float = 0.25,
+    dphi: float = np.pi / 20.0,
+    particle_mass: Optional[float] = None,
+    usdense: Optional[float] = None,
+) -> pd.DataFrame:
+    # Ensure r is present
+    if "r" not in df.columns:
+        df["r"] = np.sqrt(df["x"] ** 2 + df["y"] ** 2)
+
+    # Ensure sigma is present
+    if "sigma" not in df.columns:
+        # 'compute_local_surface_density' presumably returns an array of values, one per particle
+        df["sigma"] = compute_local_surface_density(
+            df.copy(), dr=dr, dphi=dphi, particle_mass=particle_mass, usdense=usdense
+        )
+
+    # Bin the data into radial bins
+    df = get_r_bins(df, dr=dr)
+
+    # Compute average sigma per radial bin
+    avg_sigma_by_bin = average_within_bins(df, "sigma", "r_bin")
+
+    # Map the averaged values back to each particle
+    df["avg_sigma"] = df["r_bin"].map(avg_sigma_by_bin)
+
+    return df
+
+
+def get_dSigma_Sigma(
+    df: pd.DataFrame,
+    dr: float = 0.25,
+    dphi: float = np.pi / 20.0,
+    particle_mass: Optional[float] = None,
+    usdense: Optional[float] = None,
+):
+    if particle_mass is None and "mass" in df.columns:
+        particle_mass = df["mass"].to_numpy()[0]
+
+    sdf = get_az_avg_Sigma(df, dr=dr, dphi=dphi, particle_mass=particle_mass, usdense=usdense)
+
+    sdf["dsigma_sigma"] = (df.sigma - df.avg_sigma) / df.sigma
+
+    return sdf
