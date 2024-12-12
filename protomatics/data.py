@@ -465,30 +465,43 @@ def read_phantom(
 
 class SPHData:
 
-    """A class that includes data read from an HDF5 output (designed for PHANTOM at this point)"""
+    """A class that includes data read from a dumpfile in binary or HDF5 (designed for PHANTOM at this point)"""
 
-    def __init__(self, file_path: str, extra_file_keys: Optional[list] = None):
-        self.data, file = make_hdf5_dataframe(
-            file_path,
-            extra_file_keys=extra_file_keys,
-            return_file=True,
-        )
-
+    def __init__(
+        self,
+        file_path: str,
+        extra_file_keys: Optional[list] = None,
+        ignore_inactive: bool = True,
+        separate: str = "sinks",
+    ):
         self.file_path = file_path
 
-        self.sink_data = make_sink_dataframe(None, file)
-        self.params = get_run_params(None, file)
+        if ".h5" in file_path:
+            self.data, file = make_hdf5_dataframe(
+                file_path,
+                extra_file_keys=extra_file_keys,
+                return_file=True,
+            )
 
-        self.params["usdensity"] = self.params["umass"] / (self.params["udist"] ** 2)
-        self.params["udensity"] = self.params["umass"] / (self.params["udist"] ** 3)
-        self.params["uvol"] = self.params["udist"] ** 3.0
-        self.params["uarea"] = self.params["udist"] ** 2.0
-        self.params["uvel"] = self.params["udist"] / self.params["utime"]
+            self.sink_data = make_sink_dataframe(None, file)
+            self.params = get_run_params(None, file)
 
-        if type(self.params["massoftype"]) == np.ndarray:
-            self.params["mass"] = self.params["massoftype"][0]
+            self.params["usdensity"] = self.params["umass"] / (self.params["udist"] ** 2)
+            self.params["udensity"] = self.params["umass"] / (self.params["udist"] ** 3)
+            self.params["uvol"] = self.params["udist"] ** 3.0
+            self.params["uarea"] = self.params["udist"] ** 2.0
+            self.params["uvel"] = self.params["udist"] / self.params["utime"]
+
+            if type(self.params["massoftype"]) == np.ndarray:
+                self.params["mass"] = self.params["massoftype"][0]
+            else:
+                self.params["mass"] = self.params["massoftype"]
         else:
-            self.params["mass"] = self.params["massoftype"]
+            (self.data, self.sink_data), self.params = read_phantom(
+                file_path,
+                ignore_inactive=ignore_inactive,
+                separate_types=separate,
+            )
 
     def add_surface_density(
         self,
