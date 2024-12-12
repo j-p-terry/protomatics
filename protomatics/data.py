@@ -502,6 +502,7 @@ class SPHData:
                 ignore_inactive=ignore_inactive,
                 separate_types=separate,
             )
+            self.data["iorig"] = self.data["iorig"].astype(int)
 
     def add_surface_density(
         self,
