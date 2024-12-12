@@ -540,7 +540,7 @@ def compute_local_surface_density(
     sdf: sn.SarracenDataFrame,
     dr: float = 0.25,
     dphi: float = np.pi / 18,
-    uarea: Optional[float] = None,
+    usdense: Optional[float] = None,
     particle_mass: Optional[float] = None,
 ) -> np.ndarray:
     """
@@ -557,8 +557,8 @@ def compute_local_surface_density(
     Returns:
         numpy array of surface density in CGS units
     """
-    if uarea is None:
-        uarea = sdf.params["umass"] / (sdf.params["udist"] ** 2)
+    if usdense is None:
+        usdense = sdf.params["umass"] / (sdf.params["udist"] ** 2)
     if particle_mass is None:
         particle_mass = sdf.params["mass"]
     cols = sdf.columns
@@ -586,7 +586,7 @@ def compute_local_surface_density(
         .reset_index(name="Sigma")
     )
     sdf = sdf.copy().merge(surface_density, on=["r_bin", "phi_bin"], how="left")
-    return sdf["Sigma"].to_numpy() * uarea
+    return sdf["sigma"].to_numpy() * usdense
 
 
 def mdot_to_Bphi(
