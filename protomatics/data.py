@@ -166,6 +166,10 @@ def get_run_params(file_path: str, file: h5py._hl.files.File = None):
 
 
 class PhantomFileReader:
+    """Reads a phantom binary dumpfile in, parsing the parameters, and splitting dataframes into (optionally) sinks and different particles
+    Heavy inspiration from sarracen (thank you!)
+    """
+
     def __init__(self, filename: str):
         self.filename = filename
         self.fp = None
