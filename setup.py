@@ -10,7 +10,7 @@ with open(os.path.join(this_directory, "README.md")) as f:
 
 setuptools.setup(
     name="protomatics",
-    version="0.7.7",
+    version="0.8.0",
     author="Jason Terry",
     author_email="jpterry@uga.edu",
     packages=["protomatics"],
@@ -26,6 +26,7 @@ setuptools.setup(
         "colorspacious",
         "h5py",
         "matplotlib",
+        "numba",
         "numpy",
         "pandas",
         "pytest",
