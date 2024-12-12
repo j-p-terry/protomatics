@@ -15,3 +15,7 @@ Z_sol = 0.0196  # solar metallicity
 stef_boltz_cgs = 5.6704e-5
 k_b_cgs = 1.3807e-16
 seconds_per_year = 31556952.0
+M_earth_kg = 5.972e24
+M_jup_kg = 1.898e27
+M_earth_g = 5.972e27
+M_jup_g = 1.898e30
