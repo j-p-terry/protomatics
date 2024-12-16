@@ -584,7 +584,7 @@ def compute_local_surface_density(
     surface_density = (
         sdf.groupby(["r_bin", "phi_bin"])
         .apply(compute_bin_surface_density)
-        .reset_index(name="Sigma")
+        .reset_index(name="sigma")
     )
     sdf = sdf.copy().merge(surface_density, on=["r_bin", "phi_bin"], how="left")
     return sdf["sigma"].to_numpy() * usdense
