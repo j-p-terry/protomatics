@@ -522,6 +522,16 @@ class SPHData:
         )
         self.data["sigma"] = sigma
 
-    def add_mass_column(self):
+    def add_mass(self):
         if "mass" not in self.data.columns:
             self.data["mass"] = self.params["mass"] * np.ones_like(self.data["x"].to_numpy())
+
+    def add_vphi(self):
+        self.data["vphi"] = -self.data.vx * np.sin(self.data.phi) + self.data.vy * np.cos(
+            self.data.phi
+        )
+
+    def add_vr(self):
+        self.data["vr"] = self.data.vx * np.cos(self.data.phi) + self.data.vy * np.sin(
+            self.data.phi
+        )
