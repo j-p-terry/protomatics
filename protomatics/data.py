@@ -517,7 +517,7 @@ class SPHData:
             self.data.copy(),
             dr=dr,
             dphi=dphi,
-            uarea=self.params["uarea"],
+            usdense=self.params["usdensity"],
             particle_mass=self.params["mass"],
         )
         self.data["sigma"] = sigma
