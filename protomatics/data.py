@@ -521,3 +521,7 @@ class SPHData:
             particle_mass=self.params["mass"],
         )
         self.data["sigma"] = sigma
+
+    def add_mass_column(self):
+        if "mass" not in self.data.columns:
+            self.data["mass"] = self.params["mass"] * np.ones_like(self.data["x"].to_numpy())
