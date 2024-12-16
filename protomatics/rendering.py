@@ -322,6 +322,8 @@ def render_value(
     arrowstyle: str = "->",
     arrowcolor: str = "white",
     arrowwidth: float = 1.0,
+    dont_close: bool = False,
+    return_image: bool = True,
     **kwargs,
 ):
     """Renders a value from an SPH simulation with optional smoothing (no, sph, gaussian)
@@ -382,7 +384,7 @@ def render_value(
     else:
         stream_grids = None
 
-    mesh_image(
+    return mesh_image(
         X,
         Y,
         data,
@@ -409,5 +411,7 @@ def render_value(
         arrowsize=arrowsize,
         arrowstyle=arrowstyle,
         arrowwidth=arrowwidth,
+        dont_close=dont_close,
+        return_image=resmooth,
         **kwargs,
     )

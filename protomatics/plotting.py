@@ -814,6 +814,8 @@ def mesh_image(
     arrowstyle: str = "->",
     arrowcolor: str = "white",
     arrowwidth: float = 1.0,
+    return_image: bool = False,
+    dont_close: bool = False,
     **kwargs,
 ):
     # get font information if given
@@ -826,7 +828,7 @@ def mesh_image(
     plot_cmap = kwargs.get("cmap", cmap)
     contour_lw = kwargs.get("lw", lw)
 
-    plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
 
     norm = LogNorm(vmin, vmax) if log else Normalize(vmin, vmax)
     norm = SymLogNorm(linthresh, vmin, vmax) if symlog else norm
@@ -882,8 +884,13 @@ def mesh_image(
         plt.savefig(savename)
     if show:
         plt.show()
-    else:
-        plt.close()
+        return None
+    if return_image:
+        return fig
+    if dont_close:
+        return None
+    plt.close()
+    return None
 
 
 def hex_to_rgb(value):
