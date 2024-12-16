@@ -479,15 +479,6 @@ class SPHData:
             )
             self.sink_data = make_sink_dataframe(None, file)
             self.params = get_run_params(None, file)
-            self.params["usdensity"] = self.params["umass"] / (self.params["udist"] ** 2)
-            self.params["udensity"] = self.params["umass"] / (self.params["udist"] ** 3)
-            self.params["uvol"] = self.params["udist"] ** 3.0
-            self.params["uarea"] = self.params["udist"] ** 2.0
-            self.params["uvel"] = self.params["udist"] / self.params["utime"]
-            if type(self.params["massoftype"]) == np.ndarray:
-                self.params["mass"] = self.params["massoftype"][0]
-            else:
-                self.params["mass"] = self.params["massoftype"]
         else:
             self.data, self.sink_data, self.params = read_phantom(
                 file_path,
@@ -504,6 +495,15 @@ class SPHData:
                 self.data["Bphi"] = -self.data.Bx * np.sin(self.data.phi) + self.data.By * np.cos(
                     self.data.phi
                 )
+        self.params["usdensity"] = self.params["umass"] / (self.params["udist"] ** 2)
+        self.params["udensity"] = self.params["umass"] / (self.params["udist"] ** 3)
+        self.params["uvol"] = self.params["udist"] ** 3.0
+        self.params["uarea"] = self.params["udist"] ** 2.0
+        self.params["uvel"] = self.params["udist"] / self.params["utime"]
+        if type(self.params["massoftype"]) == np.ndarray:
+            self.params["mass"] = self.params["massoftype"][0]
+        else:
+            self.params["mass"] = self.params["massoftype"]
 
     def add_surface_density(
         self,
