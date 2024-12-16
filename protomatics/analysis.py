@@ -656,14 +656,18 @@ def get_az_avg_Sigma(
             df.copy(), dr=dr, dphi=dphi, particle_mass=particle_mass, usdense=usdense
         )
 
+    return get_azimuthal_average(df, "sigma", dr=dr)
+
+
+def get_azimuthal_average(df: pd.DataFrame, value: str, dr: float = 0.25):
     # Bin the data into radial bins
     df = get_r_bins(df, dr=dr)
 
     # Compute average sigma per radial bin
-    avg_sigma_by_bin = average_within_bins(df, "sigma", "r_bin")
+    avg_sigma_by_bin = average_within_bins(df, value, "r_bin")
 
     # Map the averaged values back to each particle
-    df["avg_sigma"] = df["r_bin"].map(avg_sigma_by_bin)
+    df[f"avg_{value}"] = df["r_bin"].map(avg_sigma_by_bin)
 
     return df
 
