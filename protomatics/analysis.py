@@ -10,7 +10,7 @@ from scipy.interpolate import griddata
 
 from .constants import au_pc
 from .data import make_hdf5_dataframe
-from .helpers import average_within_bins, get_r_bins
+from .helpers import get_azimuthal_average
 from .plotting import basic_image_plot, plot_wcs_data
 from .rendering import sph_smoothing
 
@@ -644,6 +644,8 @@ def get_az_avg_Sigma(
     dphi: float = np.pi / 20.0,
     particle_mass: Optional[float] = None,
     usdense: Optional[float] = None,
+    rmin: Optional[float] = None,
+    rmax: Optional[float] = None,
 ) -> pd.DataFrame:
     # Ensure r is present
     if "r" not in df.columns:
@@ -656,20 +658,7 @@ def get_az_avg_Sigma(
             df.copy(), dr=dr, dphi=dphi, particle_mass=particle_mass, usdense=usdense
         )
 
-    return get_azimuthal_average(df, "sigma", dr=dr)
-
-
-def get_azimuthal_average(df: pd.DataFrame, value: str, dr: float = 0.25):
-    # Bin the data into radial bins
-    df = get_r_bins(df, dr=dr)
-
-    # Compute average sigma per radial bin
-    avg_sigma_by_bin = average_within_bins(df, value, "r_bin")
-
-    # Map the averaged values back to each particle
-    df[f"avg_{value}"] = df["r_bin"].map(avg_sigma_by_bin)
-
-    return df
+    return get_azimuthal_average(df, "sigma", dr=dr, rmin=rmin, rmax=rmax)
 
 
 def get_dSigma_Sigma(
@@ -678,11 +667,15 @@ def get_dSigma_Sigma(
     dphi: float = np.pi / 20.0,
     particle_mass: Optional[float] = None,
     usdense: Optional[float] = None,
+    rmin: Optional[float] = None,
+    rmax: Optional[float] = None,
 ):
     if particle_mass is None and "mass" in df.columns:
         particle_mass = df["mass"].to_numpy()[0]
 
-    df = get_az_avg_Sigma(df, dr=dr, dphi=dphi, particle_mass=particle_mass, usdense=usdense)
+    df = get_az_avg_Sigma(
+        df, dr=dr, dphi=dphi, particle_mass=particle_mass, usdense=usdense, rmin=rmin, rmax=rmax
+    )
 
     df["dsigma_sigma"] = (df.sigma - df.avg_sigma) / df.sigma
 

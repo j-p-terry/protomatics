@@ -111,6 +111,10 @@ def get_r_bins(
     return_rs: bool = False,
 ):
     """Bins into discrete radial regions"""
+    if rmin is None:
+        rmin = np.min(df["r"].to_numpy())
+    if rmax is None:
+        np.min(df["r"].to_numpy())
     return get_bins(df, value="r", vmin=rmin, vmax=rmax, dval=dr, nval=nr, return_vals=return_rs)
 
 
@@ -123,6 +127,10 @@ def get_phi_bins(
     return_phis: bool = False,
 ):
     """Bins into discrete azimuthal regions"""
+    if phimin is None:
+        phimin = np.min(df["phi"].to_numpy())
+    if phimax is None:
+        phimin = np.min(df["phi"].to_numpy())
     return get_bins(
         df, value="phi", vmin=phimin, vmax=phimax, dval=dphi, nval=nphi, return_vals=return_phis
     )
@@ -167,6 +175,25 @@ def get_bins(
 
     if return_vals:
         return df, vals
+    return df
+
+
+def get_azimuthal_average(
+    df: pd.DataFrame,
+    value: str,
+    dr: float = 0.25,
+    rmin: Optional[float] = None,
+    rmax: Optional[float] = None,
+):
+    # Bin the data into radial bins
+    df = get_r_bins(df, dr=dr, rmin=rmin, rmax=rmax)
+
+    # Compute average sigma per radial bin
+    avg_sigma_by_bin = average_within_bins(df, value, "r_bin")
+
+    # Map the averaged values back to each particle
+    df[f"avg_{value}"] = df["r_bin"].map(avg_sigma_by_bin)
+
     return df
 
 
