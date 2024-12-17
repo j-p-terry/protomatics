@@ -643,7 +643,7 @@ def get_az_avg_Sigma(
     dr: float = 0.25,
     dphi: float = np.pi / 20.0,
     particle_mass: Optional[float] = None,
-    usdense: Optional[float] = None,
+    usdense: float = 1.0,
     rmin: Optional[float] = None,
     rmax: Optional[float] = None,
 ) -> pd.DataFrame:

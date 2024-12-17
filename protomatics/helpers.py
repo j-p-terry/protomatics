@@ -114,7 +114,7 @@ def get_r_bins(
     if rmin is None:
         rmin = np.min(df["r"].to_numpy())
     if rmax is None:
-        np.min(df["r"].to_numpy())
+        rmax = np.min(df["r"].to_numpy())
     return get_bins(df, value="r", vmin=rmin, vmax=rmax, dval=dr, nval=nr, return_vals=return_rs)
 
 
@@ -163,8 +163,8 @@ def get_bins(
             df["phi"] = np.arctan2(df.y, df.x)
         elif value == "r":
             df["r"] = np.sqrt(df.x**2 + df.y**2)
-    vals = np.linspace(vmin, vmax, nval) if nval is not None else np.arange(vmin, vmax, dval)
-    dval = dval if dval is not None else np.abs(dval[1] - dval[0])
+    vals = np.linspace(vmin, vmax, nval) if dval is None else np.arange(vmin, vmax, dval)
+    dval = dval if dval is not None else np.abs(vals[1] - vals[0])
     # Define the edges of the bins
     bin_edges = np.append(
         vals - dval / 2,
@@ -189,10 +189,10 @@ def get_azimuthal_average(
     df = get_r_bins(df, dr=dr, rmin=rmin, rmax=rmax)
 
     # Compute average sigma per radial bin
-    avg_sigma_by_bin = average_within_bins(df, value, "r_bin")
+    avg_by_bin = average_within_bins(df, value, "r_bin")
 
     # Map the averaged values back to each particle
-    df[f"avg_{value}"] = df["r_bin"].map(avg_sigma_by_bin)
+    df[f"avg_{value}"] = df["r_bin"].map(avg_by_bin)
 
     return df
 
