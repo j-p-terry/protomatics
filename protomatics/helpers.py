@@ -130,7 +130,7 @@ def get_phi_bins(
     if phimin is None:
         phimin = np.min(df["phi"].to_numpy())
     if phimax is None:
-        phimin = np.min(df["phi"].to_numpy())
+        phimin = np.max(df["phi"].to_numpy())
     return get_bins(
         df, value="phi", vmin=phimin, vmax=phimax, dval=dphi, nval=nphi, return_vals=return_phis
     )
