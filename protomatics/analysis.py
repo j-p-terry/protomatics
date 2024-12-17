@@ -538,7 +538,7 @@ def get_annulus_toomre(
 
 
 def compute_local_surface_density(
-    sdf: sn.SarracenDataFrame,
+    sdf: pd.DataFrame,
     dr: float = 0.25,
     dphi: float = np.pi / 18,
     usdense: Optional[float] = None,
