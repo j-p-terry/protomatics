@@ -176,6 +176,10 @@ class PhantomFileReader:
         self.particle_df = pd.DataFrame()
         self.sinks_df = pd.DataFrame()
 
+    """Reads binary phantom dumpfile
+    Method takes significant inspiration from Sarracen (https://github.com/ttricco/sarracen)
+    """
+
     def _open_file(self):
         self.fp = open(self.filename, "rb")
 
