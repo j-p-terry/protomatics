@@ -670,6 +670,8 @@ def get_dSigma_Sigma(
     rmin: Optional[float] = None,
     rmax: Optional[float] = None,
 ):
+    """Calculates dSigma/Sigma = (local Sigma - avg_avg Sigma)/Sigma"""
+
     if particle_mass is None and "mass" in df.columns:
         particle_mass = df["mass"].to_numpy()[0]
 
@@ -678,5 +680,30 @@ def get_dSigma_Sigma(
     )
 
     df["dsigma_sigma"] = (df.sigma - df.avg_sigma) / df.sigma
+
+    return df
+
+
+def add_density(
+    df: pd.DataFrame,
+    params: Optional[dict] = None,
+    particle_mass: Optional[float] = None,
+    hfact: Optional[float] = None,
+):
+    """Adds the particle density to a dataframe
+    Require either a dictionary containing 'mass' and 'hfact' or explicit arguments
+    """
+
+    assert (
+        params is not None or particle_mass is not None or hfact is not None
+    ), "Need parameters or explicit mass and hfact"
+
+    assert "h" in df.columns, "Need smoothing length in data"
+
+    hfact = hfact if hfact is not None else params["hfact"]
+
+    mass = particle_mass if particle_mass is not None else params["mass"]
+
+    df["rho"] = mass * (hfact / df["h"]) ** (2 + int("z" in df.columns))
 
     return df

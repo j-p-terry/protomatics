@@ -509,6 +509,14 @@ class SPHData:
         else:
             self.params["mass"] = self.params["massoftype"]
 
+        if "rho" in extra_file_keys or "density" in extra_file_keys:
+            from .analysis import add_density
+
+            try:
+                self.data = add_density(self.data, params=self.params)
+            except AssertionError as e:
+                print(f"Failed to calculate density: {e}")
+
     def add_surface_density(
         self,
         dr: float = 0.1,
