@@ -6,4 +6,4 @@ from .moments import *
 from .plotting import *
 from .rendering import *
 
-__version__ = "0.8.9"
+__version__ = "0.8.10"
