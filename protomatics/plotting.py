@@ -138,6 +138,7 @@ def plot_wcs_data(
     plot_text_color: str = "white",
     manual_beam_location: bool = False,
     manual_overlay_beam_location: bool = False,
+    tight_layout: bool = False,
     **kwargs,
 ) -> None:
     """
@@ -371,6 +372,8 @@ def plot_wcs_data(
                 else "bottom right",
             )
 
+    if tight_layout:
+        plt.tight_layout()
     if save:
         plt.savefig(save_name)
     if show:
