@@ -170,7 +170,7 @@ def get_bins(
         vals - dval / 2,
         vals[-1] + dval / 2,
     )
-    # Assign each particle to a radial bin
+    # Assign each particle to a bin
     df[f"{value}_bin"] = pd.cut(df[value], bins=bin_edges, labels=vals, include_lowest=True)
 
     if return_vals:
