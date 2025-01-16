@@ -352,6 +352,8 @@ def render_value(
     else:
         if x_bounds is not None and y_bounds is not None:
             extent = (x_bounds[0], x_bounds[1], y_bounds[0], y_bounds[1])
+        else:
+            extent = None
         X, Y, data = bin_data(
             df,
             value,
