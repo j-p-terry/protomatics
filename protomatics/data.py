@@ -509,7 +509,9 @@ class SPHData:
         else:
             self.params["mass"] = self.params["massoftype"]
 
-        if "rho" in extra_file_keys or "density" in extra_file_keys:
+        if extra_file_keys is not None and (
+            "rho" in extra_file_keys or "density" in extra_file_keys
+        ):
             from .analysis import add_density
 
             try:
