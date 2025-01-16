@@ -540,7 +540,7 @@ def get_annulus_toomre(
 def compute_local_surface_density(
     sdf: pd.DataFrame,
     dr: float = 0.25,
-    dphi: float = np.pi / 18,
+    dphi: float = np.pi / 20,
     usdense: Optional[float] = None,
     particle_mass: Optional[float] = None,
 ) -> np.ndarray:
@@ -550,7 +550,7 @@ def compute_local_surface_density(
     sneaky inline operations that can mess things up
 
     Parameters:
-        sdf (: sn.SarracenDataFrame): sn.Dataframe containing SPH particle data with columns:
+        sdf (pandas DataFrame): sn.Dataframe containing SPH particle data with columns:
                            'x', 'y', 'z' with parameters "mass" and "umass" and "udist"
         dr (float): Radial bin width for grouping particles (default: 1.0).
         dphi (float): Azimuthal bin width in radians (default: π/18 or 10 degrees).
