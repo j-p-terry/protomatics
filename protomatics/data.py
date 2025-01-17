@@ -489,7 +489,8 @@ class SPHData:
                 ignore_inactive=ignore_inactive,
                 separate_types=separate,
             )
-            self.data["iorig"] = self.data["iorig"].astype(int)
+            if "iorig" in self.data:
+                self.data["iorig"] = self.data["iorig"].astype(int)
             self.data["r"] = np.sqrt(self.data.x**2 + self.data.y**2)
             self.data["phi"] = np.arctan2(self.data.y, self.data.x)
             if "Bx" in self.data.columns:
