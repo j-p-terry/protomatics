@@ -10,7 +10,7 @@ with open(os.path.join(this_directory, "README.md")) as f:
 
 setuptools.setup(
     name="protomatics",
-    version="0.8.11",
+    version="0.8.12",
     author="Jason Terry",
     author_email="jason.terry@earth.ox.ac.uk",
     packages=["protomatics"],
