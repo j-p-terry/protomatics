@@ -731,33 +731,35 @@ def get_N_neighbors(df: pd.DataFrame, cutoff_r: float = 2.0):
     return [len(neighbors) for neighbors in neighbor_lists]
 
 
-def get_neighbor_aspect_ratio(h: float, r: float, N_neigh: float):
-    """Gets aspect ratio for an SPH particle with a smoothing length, h,
-    at a distance, r, and N_neigh neighbors
+def get_neighbor_scale_height(h: float, N_neigh: float):
+    """Gets scale height for an SPH particle with a smoothing length, h,
+    and N_neigh neighbors
     all values in CGS
     """
 
-    return h * (N_neigh ** (1.0 / 3.0)) / r
+    return h * (N_neigh ** (1.0 / 3.0))
 
 
-def get_neighbor_isothermal_cs(
+def get_neighbor_cs(
     h: float,
     r: float,
     N_neigh: float,
     M: float = Msol_g,
+    H: Optional[float] = None,
 ):
     """Gets the isothermal sound speed for an SPH particle with a smoothing length, h,
-    at a distance, r, with N_neigh neighbors (H/r = cs/Omega)
+    at a distance, r, with N_neigh neighbors by calculating the aspect ratio (H/r = cs/Omega)
     all values in CGS
     """
 
-    Hr = get_neighbor_aspect_ratio(h, r, N_neigh)
+    if H is None:
+        H = get_neighbor_scale_height(h, N_neigh)
     Omega = np.sqrt(G_cgs * M / r**3.0)
 
-    return Hr * r * Omega
+    return H * Omega
 
 
-def get_isothermal_T(cs: float, mmw: float = 2.353):
+def get_isothermal_T(cs: float, mu: float = 2.353):
     """Gets isothermal temperature for a soundspeed, cs (CGS)"""
 
-    return (mmw * m_proton_g / k_b_cgs) * (cs**2)
+    return (mu * m_proton_g / k_b_cgs) * (cs**2)

@@ -473,6 +473,8 @@ class SPHData:
         extra_file_keys: Optional[list] = None,
         ignore_inactive: bool = True,
         separate: str = "sinks",
+        cutoff_r: float = 2.0,
+        mu: float = 2.353,
     ):
         self.file_path = file_path
         if ".h5" in file_path:
@@ -513,12 +515,45 @@ class SPHData:
         if extra_file_keys is not None and (
             "rho" in extra_file_keys or "density" in extra_file_keys
         ):
-            from .analysis import add_density
+            if "rho" in extra_file_keys or "density" in extra_file_keys:
+                from .analysis import add_density
 
-            try:
-                self.data = add_density(self.data, params=self.params)
-            except AssertionError as e:
-                print(f"Failed to calculate density: {e}")
+                try:
+                    self.data = add_density(self.data, params=self.params)
+                except AssertionError as e:
+                    print(f"Failed to calculate density: {e}")
+            elif (
+                "N_neigh" in extra_file_keys
+                or "T" in extra_file_keys
+                or "cs" in extra_file_keys
+                or "H" in extra_file_keys
+            ):
+                from .analysis import get_N_neighbors
+
+                self.data["N_neigh"] = get_N_neighbors(self.data, cutoff_r=cutoff_r)
+                if "H" in extra_file_keys:
+                    from .analysis import get_neighbor_scale_height
+
+                    self.data["H"] = get_neighbor_scale_height(
+                        self.data["h"].to_numpy() * self.params["udist"],
+                        self.data["N_neigh"].to_numpy(),
+                    )
+                if "cs" in extra_file_keys or "T" in extra_file_keys:
+                    from .analysis import get_neighbor_cs
+
+                    self.data["cs"] = get_neighbor_cs(
+                        self.data["h"].to_numpy() * self.params["udist"],
+                        self.data["N_neigh"].to_numpy(),
+                        M=self.sink_data["m"].to_numpy()[0] * self.params["umass"],
+                        H=None if "H" not in self.data else self.data["H"].to_numpy(),
+                    )
+                if "T" in extra_file_keys:
+                    from .analysis import get_isothermal_T
+
+                    self.data["T"] = get_isothermal_T(
+                        self.data["cs"].to_numpy(),
+                        mu=mu,
+                    )
 
     def add_surface_density(
         self,
