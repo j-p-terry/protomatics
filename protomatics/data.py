@@ -547,13 +547,13 @@ class SPHData:
                         M=self.sink_data["m"].to_numpy()[0] * self.params["umass"],
                         H=None if "H" not in self.data else self.data["H"].to_numpy(),
                     )
-                if "T" in extra_file_keys:
-                    from .analysis import get_isothermal_T
+                    if "T" in extra_file_keys:
+                        from .analysis import get_isothermal_T
 
-                    self.data["T"] = get_isothermal_T(
-                        self.data["cs"].to_numpy(),
-                        mu=mu,
-                    )
+                        self.data["T"] = get_isothermal_T(
+                            self.data["cs"].to_numpy(),
+                            mu=mu,
+                        )
 
     def add_surface_density(
         self,
