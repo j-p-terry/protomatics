@@ -7,8 +7,9 @@ import pandas as pd
 import sarracen as sn
 from astropy.io import fits
 from scipy.interpolate import griddata
+from scipy.spatial import cKDTree
 
-from .constants import au_pc
+from .constants import G_cgs, Msol_g, au_pc, k_b_cgs, m_proton_g
 from .data import make_hdf5_dataframe
 from .helpers import get_azimuthal_average
 from .plotting import basic_image_plot, plot_wcs_data
@@ -707,3 +708,56 @@ def add_density(
     df["rho"] = mass * (hfact / df["h"]) ** (2 + int("z" in df.columns))
 
     return df
+
+
+def get_N_neighbors(df: pd.DataFrame, cutoff_r: float = 2.0):
+    """Gets the number of neighbors for an sph output with x, y, z coordinates and
+    smoothing length, h
+    neighbors are within cutoff_r * smoothing length
+    """
+    # Build a KDTree using particle coordinates
+    particle_coords = df[["x", "y", "z"]].to_numpy()
+    tree = cKDTree(particle_coords)
+
+    # h = smoothing length
+    radii = cutoff_r * df["h"].to_numpy()  # Radii for all particles
+
+    # Query the tree
+    neighbor_lists = [
+        tree.query_ball_point(particle_coords[i], r=radii[i]) for i in range(len(particle_coords))
+    ]
+
+    # Get neighbor counts
+    return [len(neighbors) for neighbors in neighbor_lists]
+
+
+def get_neighbor_aspect_ratio(h: float, r: float, N_neigh: float):
+    """Gets aspect ratio for an SPH particle with a smoothing length, h,
+    at a distance, r, and N_neigh neighbors
+    all values in CGS
+    """
+
+    return h * (N_neigh ** (1.0 / 3.0)) / r
+
+
+def get_neighbor_isothermal_cs(
+    h: float,
+    r: float,
+    N_neigh: float,
+    M: float = Msol_g,
+):
+    """Gets the isothermal sound speed for an SPH particle with a smoothing length, h,
+    at a distance, r, with N_neigh neighbors (H/r = cs/Omega)
+    all values in CGS
+    """
+
+    Hr = get_neighbor_aspect_ratio(h, r, N_neigh)
+    Omega = np.sqrt(G_cgs * M / r**3.0)
+
+    return Hr * r * Omega
+
+
+def get_isothermal_T(cs: float, mmw: float = 2.353):
+    """Gets isothermal temperature for a soundspeed, cs (CGS)"""
+
+    return (mmw * m_proton_g / k_b_cgs) * (cs**2)
