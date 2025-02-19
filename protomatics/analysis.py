@@ -568,13 +568,21 @@ def compute_local_surface_density(
         sdf["r"] = np.sqrt(sdf["x"] ** 2.0 + sdf["y"] ** 2.0)
     if "phi" not in cols:
         sdf["phi"] = np.arctan2(sdf["y"], sdf["x"])
-    # if "rho" not in cols:
-    # sdf.calc_density()
+
+    # Fix data type
+    sdf["r"] = sdf["r"].astype(np.float64, copy=False)
+    sdf["phi"] = sdf["phi"].astype(np.float64, copy=False)
 
     # Assign particles to radial and azimuthal bins
-    sdf["r_bin"] = (sdf["r"] // dr) * dr  # Floor to nearest radial bin
-    sdf["phi_bin"] = (sdf["phi"] // dphi) * dphi  # Floor to nearest azimuthal bin
-    sdf["mass"] = particle_mass * np.ones_like(sdf["r"], dtype=sdf.r_bin.dtype.type)
+    sdf["r_bin"] = np.array((sdf["r"] // dr) * dr, dtype="float64")  # Floor to nearest radial bin
+    sdf["phi_bin"] = np.array(
+        (sdf["phi"] // dphi) * dphi, dtype="float64"
+    )  # Floor to nearest azimuthal bin
+    sdf["mass"] = np.array((particle_mass * np.ones_like(sdf["r"])), dtype="float64")
+
+    # import pdb; pdb.set_trace()
+    dr = np.float64(dr)
+    dphi = np.float64(dphi)
 
     # Compute local surface density by summing mass / area for each (R_bin, phi_bin)
     def compute_bin_surface_density(group):
