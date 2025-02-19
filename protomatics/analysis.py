@@ -574,7 +574,7 @@ def compute_local_surface_density(
     # Assign particles to radial and azimuthal bins
     sdf["r_bin"] = (sdf["r"] // dr) * dr  # Floor to nearest radial bin
     sdf["phi_bin"] = (sdf["phi"] // dphi) * dphi  # Floor to nearest azimuthal bin
-    sdf["mass"] = particle_mass * np.ones_like(sdf["r"])
+    sdf["mass"] = particle_mass * np.ones_like(sdf["r"], dtype=sdf.r_bin.dtype.type)
 
     # Compute local surface density by summing mass / area for each (R_bin, phi_bin)
     def compute_bin_surface_density(group):
