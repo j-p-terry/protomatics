@@ -507,8 +507,14 @@ def get_annulus_toomre(
     sdf = get_annulus(sdf, r_annulus, dr=dr)
 
     # Get enclosed mass
-    sdf.create_mass_column()
-    M_annulus = np.sum(sdf.m)
+    if "m" not in list(sdf) and "mass" not in list(sdf):
+        sdf.create_mass_column()
+        mass_col = "m"
+    elif "m" in list(sdf):
+        mass_col = "m"
+    else:
+        mass_col = "mass"
+    M_annulus = np.sum(sdf[mass_col])
 
     # Get surface density
     Sigma = get_annulus_Sigma(M_annulus, r_annulus, dr=dr)
@@ -583,6 +589,7 @@ def compute_local_surface_density(
     # import pdb; pdb.set_trace()
     dr = np.float64(dr)
     dphi = np.float64(dphi)
+    sdf["sigma"] = np.zeros(len(sdf), dtype=np.float64)
 
     # Compute local surface density by summing mass / area for each (R_bin, phi_bin)
     def compute_bin_surface_density(group):
