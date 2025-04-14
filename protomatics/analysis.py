@@ -550,6 +550,7 @@ def compute_local_surface_density(
     dphi: float = np.pi / 20,
     usdense: Optional[float] = None,
     particle_mass: Optional[float] = None,
+    params: Optional[dict] = None,
 ) -> np.ndarray:
     """
     Compute the local vertically integrated surface density from SPH particle data.
@@ -565,10 +566,22 @@ def compute_local_surface_density(
     Returns:
         numpy array of surface density in CGS units
     """
+    if params is None:
+        try:
+            params = sdf.params
+        except AttributeError:
+            params = {}
+
     if usdense is None:
-        usdense = sdf.params["umass"] / (sdf.params["udist"] ** 2)
+        try:
+            usdense = params["umass"] / (params["udist"] ** 2)
+        except KeyError:
+            usdense = 1.0
     if particle_mass is None:
-        particle_mass = sdf.params["mass"]
+        try:
+            particle_mass = params["mass"] if "mass" in params else params["massoftype"]
+        except KeyError:
+            particle_mass = 1.0
     cols = sdf.columns
     if "r" not in cols:
         sdf["r"] = np.sqrt(sdf["x"] ** 2.0 + sdf["y"] ** 2.0)
@@ -589,7 +602,6 @@ def compute_local_surface_density(
     # import pdb; pdb.set_trace()
     dr = np.float64(dr)
     dphi = np.float64(dphi)
-    sdf["sigma"] = np.zeros(len(sdf), dtype=np.float64)
 
     # Compute local surface density by summing mass / area for each (R_bin, phi_bin)
     def compute_bin_surface_density(group):
@@ -602,6 +614,7 @@ def compute_local_surface_density(
         .apply(compute_bin_surface_density)
         .reset_index(name="sigma")
     )
+    sdf = sdf.drop(columns=["sigma"], errors="ignore")
     sdf = sdf.copy().merge(surface_density, on=["r_bin", "phi_bin"], how="left")
     return sdf["sigma"].to_numpy() * usdense
 
