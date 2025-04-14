@@ -696,8 +696,8 @@ def get_dSigma_Sigma(
     dphi: float = np.pi / 20.0,
     particle_mass: Optional[float] = None,
     usdense: Optional[float] = None,
-    rmin: Optional[float] = None,
-    rmax: Optional[float] = None,
+    rmin: Optional[float] = 1.0,
+    rmax: Optional[float] = 300.0,
 ):
     """Calculates dSigma/Sigma = (local Sigma - avg_avg Sigma)/Sigma"""
 
