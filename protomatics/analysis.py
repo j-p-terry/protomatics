@@ -11,7 +11,7 @@ from scipy.spatial import cKDTree
 
 from .constants import G_cgs, Msol_g, au_pc, k_b_cgs, m_proton_g
 from .data import make_hdf5_dataframe
-from .helpers import get_azimuthal_average
+from .helpers import get_azimuthal_average, get_r_bins
 from .plotting import basic_image_plot, plot_wcs_data
 from .rendering import sph_smoothing
 
@@ -791,3 +791,36 @@ def get_isothermal_T(cs: float, mu: float = 2.353):
     """Gets isothermal temperature for a soundspeed, cs (CGS)"""
 
     return (mu * m_proton_g / k_b_cgs) * (cs**2)
+
+
+def get_rotation_curve(
+    sdf,
+    dr: float = 0.25,
+    nr: int = 100,
+    rmin: Optional[float] = None,
+    rmax: Optional[float] = None,
+    M_star: float = 1.0,
+    uvel: float = 1.0,
+    udist: float = 1.0,
+    umass: float = 1.0,
+) -> pd.DataFrame:
+    """Gets azimuthally averaged rotation curve and Keplerian rotation curve
+    returns dataframe with radially binned values, velocities in km/s
+    """
+    if "r" not in sdf.columns:
+        sdf["r"] = np.sqrt(sdf.x**2 + sdf.y**2)
+    rmin = rmin if rmin is not None else np.min(sdf.r)
+    rmax = rmax if rmax is not None else np.max(sdf.r)
+    if "phi" not in sdf.columns:
+        sdf["phi"] = np.arctan2(sdf.y, sdf.x)
+    sdf = get_r_bins(sdf, rmin=rmin, rmax=rmax, dr=dr, nr=nr)
+    sdf["vphi"] = -sdf["vx"] * np.sin(sdf["phi"]) + sdf["vy"] * np.cos(sdf["phi"])
+    sdf["vphi"] *= uvel
+    sdf["vphi"] *= 1e-5  # return in km/s
+
+    rotation_curve = sdf.groupby("r_bin")["vphi"].mean().reset_index()
+    rotation_curve["r_bin"] = rotation_curve["r_bin"].astype(float)
+    rotation_curve["vkep"] = (
+        np.sqrt(G_cgs * M_star * umass / (rotation_curve["r_bin"] * udist)) * 1e-5
+    )  # return in km/s
+    return rotation_curve
