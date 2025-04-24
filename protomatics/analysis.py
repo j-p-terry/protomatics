@@ -844,3 +844,62 @@ def get_az_avg_df(
     az_avg = sdf.groupby("r_bin")[val].mean().reset_index()
     az_avg["r_bin"] = az_avg["r_bin"].astype(float)
     return az_avg
+
+
+def get_az_avg_col(sdf: sn.SarracenDataFrame, val: str, dr: float = 0.5):
+    """Adds a column with azimuthal average"""
+    if "r" not in sdf.columns:
+        sdf = get_r(sdf)
+    rs = np.arange(np.min(sdf.r), np.max(sdf.r), dr)
+    sdf[f"avg_{val}"] = sdf[val].to_numpy()
+    for r in rs:
+        rows = np.where((sdf.r > r - dr / 2) & (sdf.r < r + dr / 2))
+        avg_val = np.mean(sdf[val].to_numpy()[rows])
+        sdf[f"avg_{val}"][((sdf.r > r - dr / 2) & (sdf.r < r + dr / 2))] = avg_val
+    return sdf
+
+
+def get_r(sdf: sn.SarracenDataFrame):
+    sdf["r"] = np.sqrt(sdf.x**2 + sdf.y**2)
+    return sdf
+
+
+def get_r3d(sdf: sn.SarracenDataFrame):
+    sdf["r_3d"] = np.sqrt(sdf.x**2 + sdf.y**2 + sdf.z**2)
+    return sdf
+
+
+def get_phi(sdf: sn.SarracenDataFrame):
+    sdf["phi"] = np.arctan2(sdf.y, sdf.x)
+    return sdf
+
+
+def get_vphi(
+    sdf: sn.SarracenDataFrame,
+):
+    if "r" not in sdf.columns:
+        sdf = get_r(sdf)
+    if "phi" not in sdf.columns:
+        sdf = get_phi(sdf)
+    # sdf["vphi"] = (sdf.x * sdf.vy - sdf.y * sdf.vx) / sdf.r
+    sdf["vphi"] = -sdf.vx * np.sin(sdf.phi) + sdf.vy * np.cos(sdf.phi)
+    return sdf
+
+
+def get_vr(sdf: sn.SarracenDataFrame):
+    if "r" not in sdf.columns:
+        sdf = get_r(sdf)
+    if "phi" not in sdf.columns:
+        sdf = get_phi(sdf)
+    # sdf["vr"] = (sdf.x * sdf.vy + sdf.y * sdf.vy) / sdf.r
+    sdf["vr"] = sdf.vx * np.cos(sdf.phi) + sdf.vy * np.sin(sdf.phi)
+    return sdf
+
+
+def get_doppler_flip(sdf):
+    if "vphi" not in sdf.columns:
+        sdf = get_vphi(sdf)
+    if "avg_vphi" not in sdf.columns:
+        sdf = get_az_avg_col(sdf, "vphi")
+    sdf["doppler_flip"] = sdf.vphi - sdf.avg_vphi
+    return sdf
