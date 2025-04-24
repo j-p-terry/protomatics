@@ -824,3 +824,23 @@ def get_rotation_curve(
         np.sqrt(G_cgs * M_star * umass / (rotation_curve["r_bin"] * udist)) * 1e-5
     )  # return in km/s
     return rotation_curve
+
+
+def get_az_avg_df(
+    sdf,
+    val: str,
+    dr: float = 0.25,
+    nr: int = 100,
+    rmin: Optional[float] = None,
+    rmax: Optional[float] = None,
+):
+    """Calculates the azimuthal average of a value and returns dataframe with binned radii and values"""
+    if "r" not in sdf.columns:
+        sdf["r"] = np.sqrt(sdf.x**2 + sdf.y**2)
+    rmin = rmin if rmin is not None else np.min(sdf.r)
+    rmax = rmax if rmax is not None else np.max(sdf.r)
+    sdf = get_r_bins(sdf, rmin=rmin, rmax=rmax, dr=dr, nr=nr)
+
+    az_avg = sdf.groupby("r_bin")[val].mean().reset_index()
+    az_avg["r_bin"] = az_avg["r_bin"].astype(float)
+    return az_avg
