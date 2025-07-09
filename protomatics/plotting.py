@@ -109,6 +109,9 @@ def plot_wcs_data(
     trim: tuple = (None, None),
     vmin: Optional[float] = None,
     vmax: Optional[float] = None,
+    hdu_index: Optional[int] = 0,
+    overlay_hdu_index: Optional[int] = 0,
+    center_image: Optional[bool] = True,
     overlay_data: Optional[np.ndarray] = None,
     overlay_hdu: Optional[list] = None,
     overlay_pmin: Optional[float] = None,
@@ -173,11 +176,12 @@ def plot_wcs_data(
     fig = plt.figure(figsize=figsize)
 
     # set middle to 0 in order to just get angular size (don't care about position)
-    hdu[0].header["CRVAL1"] = 0.0
-    hdu[0].header["CRVAL2"] = 0.0
+    if center_image:
+        hdu[hdu_index].header["CRVAL1"] = 0.0
+        hdu[hdu_index].header["CRVAL2"] = 0.0
 
     # add WCS to axis
-    wcs = WCS(hdu[0].header, naxis=2)
+    wcs = WCS(hdu[hdu_index].header, naxis=2)
     ax = WCSAxes(fig, [0.1, 0.1, 0.8, 0.8], wcs=wcs)
     fig.add_axes(ax)
 
@@ -191,7 +195,7 @@ def plot_wcs_data(
 
     # prepare the data for plotting if none is given
     if plot_data is None:
-        plot_data = hdu[0].data.copy()
+        plot_data = hdu[hdu_index].data.copy()
 
         plot_data = prepare_plot_data(
             plot_data,
@@ -244,14 +248,15 @@ def plot_wcs_data(
 
     # overlay contours from other data
     if overlay_hdu is not None:
-        overlay_hdu[0].header["CRVAL1"] = 0.0
-        overlay_hdu[0].header["CRVAL2"] = 0.0
-        overlay_hdu[0].header["CRPIX1"] = overlay_hdu[0].header["NAXIS1"] // 2
-        overlay_hdu[0].header["CRPIX2"] = overlay_hdu[0].header["NAXIS2"] // 2
-        overlay_wcs = WCS(overlay_hdu[0].header, naxis=2)
+        if center_image:
+            overlay_hdu[overlay_hdu_index].header["CRVAL1"] = 0.0
+            overlay_hdu[overlay_hdu_index].header["CRVAL2"] = 0.0
+            overlay_hdu[overlay_hdu_index].header["CRPIX1"] = overlay_hdu[0].header["NAXIS1"] // 2
+            overlay_hdu[overlay_hdu_index].header["CRPIX2"] = overlay_hdu[0].header["NAXIS2"] // 2
+        overlay_wcs = WCS(overlay_hdu[overlay_hdu_index].header, naxis=2)
 
         if overlay_data is None:
-            overlay_data = overlay_hdu[0].data.copy().squeeze()
+            overlay_data = overlay_hdu[overlay_hdu_index].data.copy().squeeze()
 
         # make sure we have a channel axis to iterate over (e.g. for continuum)
         if len(overlay_data.shape) == 2:
@@ -327,18 +332,18 @@ def plot_wcs_data(
         if manual_beam_location and type(beam_position) == list:
             c = Ellipse(
                 beam_position,
-                width=hdu[0].header["BMIN"],
-                height=hdu[0].header["BMAJ"],
+                width=hdu[hdu_index].header["BMIN"],
+                height=hdu[hdu_index].header["BMAJ"],
                 edgecolor=beam_color,
                 facecolor=beam_color,
-                angle=hdu[0].header.get("BPA", 0),
+                angle=hdu[hdu_index].header.get("BPA", 0),
                 transform=ax.get_transform("fk5"),
             )
             ax.add_patch(c)
         else:
             add_beam(
                 ax,
-                header=hdu[0].header,
+                header=hdu[hdu_index].header,
                 edgecolor=beam_color,
                 facecolor=beam_color,
                 corner=beam_position if type(beam_position) == str else "bottom left",
@@ -346,25 +351,25 @@ def plot_wcs_data(
 
     if plot_overlay_beam and overlay_hdu is not None:
         if (
-            "BMIN" not in overlay_hdu[0].header.keys()
-            or "BMAJ" not in overlay_hdu[0].header.keys()
+            "BMIN" not in overlay_hdu[hdu_index].header.keys()
+            or "BMAJ" not in overlay_hdu[hdu_index].header.keys()
         ):
             pass
         if manual_overlay_beam_location and type(overlay_beam_position) == list:
             c = Ellipse(
                 overlay_beam_position,
-                width=overlay_hdu[0].header["BMIN"],
-                height=overlay_hdu[0].header["BMAJ"],
+                width=overlay_hdu[hdu_index].header["BMIN"],
+                height=overlay_hdu[hdu_index].header["BMAJ"],
                 edgecolor=overlay_beam_color,
                 facecolor=overlay_beam_color,
-                angle=overlay_hdu[0].header.get("BPA", 0),
+                angle=overlay_hdu[hdu_index].header.get("BPA", 0),
                 transform=ax.get_transform("fk5"),
             )
             ax.add_patch(c)
         else:
             add_beam(
                 ax,
-                header=overlay_hdu[0].header,
+                header=overlay_hdu[hdu_index].header,
                 edgecolor=overlay_beam_color,
                 facecolor=overlay_beam_color,
                 corner=overlay_beam_position
