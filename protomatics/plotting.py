@@ -327,11 +327,11 @@ def plot_wcs_data(
     elif ylim[0] is not None or ylim[1] is not None:
         plt.ylim(ylim[0], ylim[1])
     elif overlay_hdu is not None:
-        plt.xlim(0, y_size - 1)
+        plt.ylim(0, y_size - 1)
     if trim[0] is not None:
         plt.xlim(trim[0], x_size - trim[0])
     elif xlim[0] is not None or xlim[1] is not None:
-        plt.ylim(xlim[0], xlim[1])
+        plt.xlim(xlim[0], xlim[1])
     elif overlay_hdu is not None:
         plt.xlim(0, x_size - 1)
 
