@@ -117,6 +117,7 @@ def plot_wcs_data(
     overlay_data: Optional[np.ndarray] = None,
     overlay_hdu: Optional[list] = None,
     overlay_pmin: Optional[float] = None,
+    overlay_pmax: Optional[float] = None,
     overlay_channels: Optional[list] = None,
     subtract_data: Optional[np.ndarray] = None,
     subtract_channels: Optional[list] = None,
@@ -291,6 +292,11 @@ def plot_wcs_data(
                 this_overlay_data[
                     this_overlay_data < overlay_pmin * np.max(this_overlay_data)
                 ] = 0.0
+
+            if overlay_pmax is not None:
+                this_overlay_data[
+                    this_overlay_data > overlay_pmax * np.max(this_overlay_data)
+                ] = overlay_pmax * np.max(this_overlay_data)
 
             # plot the contour
             ax.contour(
