@@ -129,6 +129,7 @@ def plot_wcs_data(
     symlog_linthresh: float = -0.1,
     scale_data: float = 1.0,
     overlay_data_scale: float = 1.0,
+    overlay_alpha: float = 1.0,
     plot_cmap: str = "magma",
     plot_units: str = "",
     beam_position: Union[str, list] = "bottom left",
@@ -168,7 +169,6 @@ def plot_wcs_data(
     # override default colormaps
     overlay_cmap = kwargs.get("overlay_cmap", categorical_cmap)
     overlay_color_list = kwargs.get("overlay_color_list", colors)
-    overlay_alpha = kwargs.get("overlay_alpha", 1.0)
 
     if fits_path is not None:
         hdu = fits.open(fits_path)
