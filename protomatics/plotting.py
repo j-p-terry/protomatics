@@ -107,6 +107,8 @@ def plot_wcs_data(
     save: bool = False,
     save_name: Optional[str] = None,
     trim: tuple = (None, None),
+    ylim: tuple = (None, None),
+    xlim: tuple = (None, None),
     vmin: Optional[float] = None,
     vmax: Optional[float] = None,
     hdu_index: Optional[int] = 0,
@@ -322,8 +324,16 @@ def plot_wcs_data(
     y_size = plot_data.shape[0]
     if trim[1] is not None:
         plt.ylim(trim[1], y_size - trim[1])
+    elif ylim[0] is not None or ylim[1] is not None:
+        plt.ylim(ylim[0], ylim[1])
+    elif overlay_hdu is not None:
+        plt.xlim(0, y_size - 1)
     if trim[0] is not None:
         plt.xlim(trim[0], x_size - trim[0])
+    elif xlim[0] is not None or xlim[1] is not None:
+        plt.ylim(xlim[0], xlim[1])
+    elif overlay_hdu is not None:
+        plt.xlim(0, x_size - 1)
 
     # optionally plot beams
     if plot_beam:
