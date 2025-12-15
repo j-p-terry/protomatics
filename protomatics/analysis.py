@@ -507,8 +507,9 @@ def get_annulus_toomre(
     sdf = get_annulus(sdf, r_annulus, dr=dr)
 
     # Get enclosed mass
+    #### TODO: sn 1.3 does away with create_mass_col
     if "m" not in list(sdf) and "mass" not in list(sdf):
-        sdf.create_mass_column()
+        sdf["m"] = sdf.params["massoftype"] * np.ones_like(sdf.x)
         mass_col = "m"
     elif "m" in list(sdf):
         mass_col = "m"
@@ -903,3 +904,8 @@ def get_doppler_flip(sdf):
         sdf = get_az_avg_col(sdf, "vphi")
     sdf["doppler_flip"] = sdf.vphi - sdf.avg_vphi
     return sdf
+
+
+def get_fits_axis(hdr, axis: int = 1, delta_label: str = "CDELT"):
+    pixels = np.arange(1, hdr[f"NAXIS{axis}"] + 1)
+    return hdr[f"CRVAL{axis}"] + (pixels - hdr[f"CRPIX{axis}"]) * hdr[f"{delta_label}{axis}"]
