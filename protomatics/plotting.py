@@ -130,6 +130,7 @@ def plot_wcs_data(
     scale_data: float = 1.0,
     overlay_data_scale: float = 1.0,
     overlay_alpha: float = 1.0,
+    overlay_nan: Optional[float] = None,
     plot_cmap: str = "magma",
     plot_units: str = "",
     beam_position: Union[str, list] = "bottom left",
@@ -288,6 +289,9 @@ def plot_wcs_data(
                 channel=overlay_channel,
                 subtract_channels=subtract_overlay_channels,
             )
+            # deal with NaNs (helpful if enforcing min/max)
+            if overlay_nan is not None:
+                this_overlay_data[np.isnan(this_overlay_data)] = overlay_nan
             # cut some values
             if overlay_pmin is not None:
                 this_overlay_data[
