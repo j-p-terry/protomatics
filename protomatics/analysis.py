@@ -6,12 +6,12 @@ import numpy as np
 import pandas as pd
 import sarracen as sn
 from astropy.io import fits
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, interp1d
 from scipy.spatial import cKDTree
 
 from .constants import G_cgs, Msol_g, au_pc, k_b_cgs, m_proton_g
 from .data import make_hdf5_dataframe
-from .helpers import get_azimuthal_average, get_r_bins
+from .helpers import average_within_bins, get_azimuthal_average, get_log_r_bins, get_r_bins
 from .plotting import basic_image_plot, plot_wcs_data
 from .rendering import sph_smoothing
 
@@ -493,6 +493,7 @@ def get_annulus_toomre(
     gamma: float = 5.0 / 3.0,
     convert: bool = False,
     return_intermediate_values: bool = False,
+    Omega: Optional[float] = None,
 ) -> Union[dict, float]:
     """Gets Q according to
     Q = cs_rms * Omega / pi Sigma
@@ -500,8 +501,10 @@ def get_annulus_toomre(
     and
     cs_rms^2 = 2/3u (gamma = 1)
            = (gamma - 1) gamma u (gamma != 1)
+    can optionally pass in an Omega value (e.g., from GI disk)
     """
-    sdf["r"] = np.sqrt(sdf.x**2.0 + sdf.y**2.0)
+    if "r" not in list(sdf):
+        sdf["r"] = np.sqrt(sdf.x**2.0 + sdf.y**2.0)
 
     # find everything inside that annulus
     sdf = get_annulus(sdf, r_annulus, dr=dr)
@@ -531,8 +534,9 @@ def get_annulus_toomre(
 
     crms = np.sqrt(np.mean(crms_sq))
 
-    # Keplerian frequency
-    Omega = np.sqrt(G_ * mass / r_annulus**3.0)
+    if Omega is None:
+        # Keplerian frequency
+        Omega = np.sqrt(G_ * mass / r_annulus**3.0)
 
     if return_intermediate_values:
         return {
@@ -909,3 +913,109 @@ def get_doppler_flip(sdf):
 def get_fits_axis(hdr, axis: int = 1, delta_label: str = "CDELT"):
     pixels = np.arange(1, hdr[f"NAXIS{axis}"] + 1)
     return hdr[f"CRVAL{axis}"] + (pixels - hdr[f"CRPIX{axis}"]) * hdr[f"{delta_label}{axis}"]
+
+
+def get_omega_profile(df, dr=0.25, rmin=None, rmax=None):
+    """
+    Compute azimuthally averaged Omega(R) = <vphi/R> in annuli.
+
+    Returns:
+        r_bins : array of bin centers
+        omega  : array of mean Omega per bin
+    """
+    df["omega"] = df["vphi"] / df["r"]
+
+    df, r_vals = get_r_bins(df, dr=dr, rmin=rmin, rmax=rmax, return_rs=True)
+    omega_binned = average_within_bins(df, "omega", "r_bin")
+
+    r_bins = omega_binned.index.astype(float).values
+    omega = omega_binned.values
+
+    # Drop NaN bins (empty annuli)
+    mask = np.isfinite(omega)
+    return r_bins[mask], omega[mask]
+
+
+def get_kappa_squared(r_bins: np.ndarray, omega: np.ndarray) -> np.ndarray:
+    """
+    Compute the squared epicyclic frequency from a binned Omega(R) profile.
+
+    kappa_2 = (2Omega/R) * d(R^2 Omega)/dR
+
+    Parameters:
+        r_bins : array of radial bin centers
+        omega  : azimuthally averaged Omega at each bin center
+
+    Returns:
+        kappa2 : array of kappa&2 at each bin center
+    """
+    R = np.asarray(r_bins, dtype=float)
+    Omega = np.asarray(omega, dtype=float)
+
+    R2Omega = R**2 * Omega
+    dR2Omega_dR = np.gradient(R2Omega, R)
+
+    return (2.0 * Omega / R) * dR2Omega_dR
+
+
+def get_profile(
+    df,
+    value="omega",
+    dr=0.25,
+    rmin=None,
+    rmax=None,
+    nr: int = 100,
+    use_log_r: bool = True,
+):
+    """
+    Compute azimuthally averaged value in annuli.
+
+    Returns:
+        r_bins : array of bin centers
+        omega  : array of mean Omega per bin
+    """
+
+    if not use_log_r:
+        df, r_vals = get_r_bins(df, dr=dr, rmin=rmin, rmax=rmax, return_rs=True)
+    else:
+        df, r_vals = get_log_r_bins(df, nr=nr, rmin=rmin, rmax=rmax, return_rs=True)
+    binned = average_within_bins(df, value, "r_bin")
+
+    return r_vals, binned.reindex(r_vals).values
+
+
+def get_scale_height_from_particles(
+    df, dr=0.25, rmin=None, rmax=None, min_count=50, use_log_r: bool = True, nr: int = 100
+):
+    """
+    Compute H(R) from the mass-weighted RMS z of disk-origin particles.
+    """
+    # only get active particles
+    disk = df[df.h > 0].copy()
+
+    if not use_log_r:
+        disk, r_vals = get_r_bins(
+            disk,
+            dr=dr,
+            rmin=rmin,
+            rmax=rmax,
+            return_rs=True,
+        )
+    else:
+        if nr is None:
+            nr = len(10 ** np.arange(np.log10(rmin), np.log10(rmax), dr))
+        disk, r_vals = get_log_r_bins(disk, nr=nr, rmin=rmin, rmax=rmax, return_rs=True)
+
+    grouped = disk.groupby("r_bin")
+    z_rms = grouped["z"].apply(lambda z: np.sqrt(np.mean(z**2)))
+    counts = grouped["z"].count()
+
+    mask = counts >= min_count
+    H = z_rms[mask]
+    r_vals = H.index.astype(float).to_numpy()
+    H_vals = H.values
+
+    H_interp = interp1d(r_vals, H_vals, bounds_error=False, fill_value="extrapolate")
+    df["H"] = H_interp(df["r"].values)
+
+    return df, r_vals, H_vals

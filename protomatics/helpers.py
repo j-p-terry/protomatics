@@ -109,13 +109,32 @@ def get_r_bins(
     dr: float = 0.25,
     nr: Optional[int] = None,
     return_rs: bool = False,
+    use_log: bool = False,
 ):
     """Bins into discrete radial regions"""
     if rmin is None:
         rmin = np.min(df["r"].to_numpy())
     if rmax is None:
         rmax = np.min(df["r"].to_numpy())
-    return get_bins(df, value="r", vmin=rmin, vmax=rmax, dval=dr, nval=nr, return_vals=return_rs)
+    return get_bins(
+        df,
+        value="r",
+        vmin=rmin,
+        vmax=rmax,
+        dval=dr,
+        nval=nr,
+        return_vals=return_rs,
+        use_log=use_log,
+    )
+
+
+def get_log_r_bins(df, nr=100, rmin=1.0, rmax=200.0, return_rs=True):
+    r_edges = np.logspace(np.log10(rmin), np.log10(rmax), nr + 1)
+    r_centers = 0.5 * (r_edges[:-1] + r_edges[1:])
+    df["r_bin"] = pd.cut(df["r"], bins=r_edges, labels=r_centers, include_lowest=True)
+    if return_rs:
+        return df, r_centers
+    return df
 
 
 def get_phi_bins(
@@ -125,6 +144,7 @@ def get_phi_bins(
     dphi: float = np.pi / 20.0,
     nphi: Optional[int] = None,
     return_phis: bool = False,
+    use_log: bool = False,
 ):
     """Bins into discrete azimuthal regions"""
     if phimin is None:
@@ -132,7 +152,14 @@ def get_phi_bins(
     if phimax is None:
         phimin = np.max(df["phi"].to_numpy())
     return get_bins(
-        df, value="phi", vmin=phimin, vmax=phimax, dval=dphi, nval=nphi, return_vals=return_phis
+        df,
+        value="phi",
+        vmin=phimin,
+        vmax=phimax,
+        dval=dphi,
+        nval=nphi,
+        return_vals=return_phis,
+        use_log=use_log,
     )
 
 
@@ -143,9 +170,19 @@ def get_z_bins(
     dz: float = 0.25,
     nz: Optional[int] = None,
     return_zs: bool = False,
+    use_log: bool = False,
 ):
     """Bins into discrete azimuthal regions"""
-    return get_bins(df, value="z", vmin=zmin, vmax=zmax, dval=dz, nval=nz, return_vals=return_zs)
+    return get_bins(
+        df,
+        value="z",
+        vmin=zmin,
+        vmax=zmax,
+        dval=dz,
+        nval=nz,
+        return_vals=return_zs,
+        use_log=use_log,
+    )
 
 
 def get_bins(
@@ -156,6 +193,7 @@ def get_bins(
     dval: Optional[float] = None,
     nval: Optional[int] = 100,
     return_vals: bool = False,
+    use_log: Optional[bool] = False,
 ):
     """Bins into discrete regions"""
     if value not in df.columns:
@@ -163,13 +201,25 @@ def get_bins(
             df["phi"] = np.arctan2(df.y, df.x)
         elif value == "r":
             df["r"] = np.sqrt(df.x**2 + df.y**2)
-    vals = np.linspace(vmin, vmax, nval) if dval is None else np.arange(vmin, vmax, dval)
-    dval = dval if dval is not None else np.abs(vals[1] - vals[0])
-    # Define the edges of the bins
-    bin_edges = np.append(
-        vals - dval / 2,
-        vals[-1] + dval / 2,
-    )
+    if not use_log:
+        vals = np.linspace(vmin, vmax, nval) if dval is None else np.arange(vmin, vmax, dval)
+        dval = dval if dval is not None else np.abs(vals[1] - vals[0])
+        # Define the edges of the bins
+        bin_edges = np.append(
+            vals - dval / 2,
+            vals[-1] + dval / 2,
+        )
+    else:
+        if nval is None:
+            vals = 10 ** np.arange(np.log10(vmin), np.log10(vmax), dval)
+        else:
+            vals = np.geomspace(vmin, vmax, nval)
+        lx = np.log10(vals)
+        le = np.empty(len(vals) + 1)
+        le[1:-1] = 0.5 * (lx[:-1] + lx[1:])
+        le[0] = lx[0] - 0.5 * (lx[1] - lx[0])
+        le[-1] = lx[-1] + 0.5 * (lx[-1] - lx[-2])
+        bin_edges = 10**le
     # Assign each particle to a bin
     df[f"{value}_bin"] = pd.cut(df[value], bins=bin_edges, labels=vals, include_lowest=True)
 
@@ -227,3 +277,37 @@ def sum_within_bins(df: pd.DataFrame, value_column: str, bin_columns: Union[str,
         pd.Series: Series with the average values indexed by bins.
     """
     return df.groupby(bin_columns)[value_column].sum()
+
+
+def median_within_bins(df: pd.DataFrame, value_column: str, bin_columns: Union[str, list]):
+    """
+    Calculate the sum of a value within each bin.
+
+    Parameters:
+        df (pd.DataFrame): DataFrame containing the data.
+        value_column (str): Name of the column to average (e.g., 'cs').
+        bin_column (str): Name of the binning column (e.g., 'r_bin').
+                   (list): multiple bins e.g., 'r_bin', 'phi_bin'
+
+    Returns:
+        pd.Series: Series with the average values indexed by bins.
+    """
+    return df.groupby(bin_columns)[value_column].median()
+
+
+def quant_within_bins(
+    df: pd.DataFrame, value_column: str, bin_columns: Union[str, list], quantile: float
+):
+    """
+    Calculate the sum of a value within each bin.
+
+    Parameters:
+        df (pd.DataFrame): DataFrame containing the data.
+        value_column (str): Name of the column to average (e.g., 'cs').
+        bin_column (str): Name of the binning column (e.g., 'r_bin').
+                   (list): multiple bins e.g., 'r_bin', 'phi_bin'
+
+    Returns:
+        pd.Series: Series with the average values indexed by bins.
+    """
+    return df.groupby(bin_columns)[value_column].quantile(quantile)
