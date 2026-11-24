@@ -5,6 +5,7 @@ import matplotlib
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+import sarracen as sn
 from astropy.io import fits
 from astropy.visualization.wcsaxes import WCSAxes, add_beam
 from astropy.wcs import WCS
@@ -19,6 +20,7 @@ from matplotlib.colors import (
     SymLogNorm,
 )
 from matplotlib.patches import Ellipse
+from sarracen.kernels import CubicSplineKernel
 
 ##############################################################
 ##############################################################
@@ -969,3 +971,190 @@ def create_diverging_cmap(start_color: list, middle_color: list, end_color: list
     combined = np.vstack((first_map, second_map))
 
     return LinearSegmentedColormap.from_list("diverging_colormap", combined)
+
+
+def add_colorbar(fig, im, aspect_ratio, height_ratio):
+    cbar = fig.colorbar(im, aspect=aspect_ratio)
+    cbar.ax.set_aspect(aspect_ratio)
+    position = cbar.ax.get_position()
+    cbar.ax.set_position(
+        [position.x0, position.y0, position.width, position.height * height_ratio]
+    )
+    return cbar
+
+
+def plot_dumpfile(
+    sdf: sn.SarracenDataFrame,
+    plot_value: str,
+    save: bool = False,
+    savename: str = "plot.png",
+    midplane: bool = False,
+    xy_plane: bool = True,
+    log: bool = True,
+    symlog: bool = False,
+    xlim: int = 300,
+    zlim: int = 300,
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
+    scale_data: float = 1.0,
+    arrow_size: float = 1.0,
+    cbar_label: Optional[str] = None,
+    pad: float = 0.005,
+    fraction: float = 0.045,
+    arrow_color: str = "white",
+    arrowstyle: str = "->",
+    arrowwidth: float = 1.0,
+    z: float = 0.0,
+    equal_diverging: bool = False,
+    contours: list = [],
+    contour_cmap="Greys",
+    plot_streams: Optional[tuple] = None,
+    plot_planet: Optional[list] = None,
+    planet_color: str = "k",
+    cmap: str = "magma",
+    normalize: bool = False,
+    dens_weight: bool = False,
+    kernel=CubicSplineKernel,
+    plot_star=None,
+    star_color="white",
+    star_marker="o",
+    tick_size: float = 14.0,
+    label_size: float = 20.0,
+    legend_size: float = 18.0,
+    return_img: bool = False,
+    **kwargs,
+):
+    sdf = sdf.copy()
+    sdf.kernel = kernel
+    if vmin is not None and not symlog:
+        log = False if vmin <= 0 else log
+
+    if scale_data != 1.0:
+        print("Scaling")
+        sdf[plot_value] *= scale_data
+
+    # scale between -1, 1
+    if equal_diverging:
+        sdf[plot_value] *= 2
+        sdf[plot_value] -= 1
+        log, symlog = True, True
+
+    mplrc("xtick", labelsize=tick_size)
+    mplrc("ytick", labelsize=tick_size)
+
+    savename = f"{savename}_xy" if xy_plane else f"{savename}_xz"
+    print(savename)
+
+    cbar_kwargs = {}
+    cbar_kwargs["fraction"] = fraction
+    cbar_kwargs["label"] = cbar_label if cbar_label is not None else plot_value
+    cbar_kwargs["pad"] = pad
+    size_scale_ = kwargs.pop("size_scale", 1.0)
+    font_scale_ = kwargs.pop("font_scale", 1 if xy_plane else 0.75)
+    pad_scale_ = kwargs.pop("pad_scale", 1)
+
+    cbar_kwargs["fraction"] *= size_scale_
+
+    savename = f"{savename}_midplane" if midplane else f"{savename}"
+
+    _ = plt.figure(figsize=(12.5, size_scale_ * 10.0))
+    ax = plt.gca()
+
+    float32_cols = sdf.select_dtypes(include=[np.float32]).columns
+    sdf = sdf.copy(deep=True)
+    sdf[float32_cols] = sdf[float32_cols].astype(np.float64, copy=True)
+    if vmin is not None:
+        kwargs["vmin"] = vmin
+    if vmax is not None:
+        kwargs["vmax"] = vmax
+
+    sdf.render(
+        plot_value,
+        ax=ax,
+        log_scale=log,
+        symlog_scale=symlog,
+        xlim=(-xlim, xlim),
+        ylim=(-xlim if xy_plane else -zlim, xlim if xy_plane else zlim),
+        cbar_kws=cbar_kwargs,
+        xsec=z if midplane else None,
+        cmap=cmap,
+        x="x",
+        y="y" if xy_plane else "z",
+        z="z" if xy_plane else "y",
+        normalize=normalize,
+        dens_weight=dens_weight,
+        hmin=False,
+        backend="cpu",
+        kernel=sdf.kernel,
+        **kwargs,
+    )
+
+    im = ax.images
+
+    # Now pull out its array:
+    img_data = im[-1].get_array()  # this is a numpy (or masked) array
+    img_axes = im[-1].get_extent()  # xmin/max, ymin/max
+
+    # Assume colorbar was plotted last one plotted last
+    cbar = im[-1].colorbar
+
+    cbar.ax.tick_params(
+        labelsize=tick_size,
+    )
+    cbar.ax.set_ylabel(cbar_kwargs["label"], rotation=270, fontsize=legend_size * font_scale_)
+    cbar.ax.get_yaxis().labelpad = 40 * pad_scale_
+
+    if plot_streams is not None:
+        sdf.streamlines(
+            plot_streams[0],
+            xlim=(-xlim, xlim),
+            ylim=(-xlim if xy_plane else -zlim, xlim if xy_plane else zlim),
+            xsec=z if midplane else None,
+            color=plot_streams[1],
+            ax=ax,
+            x="x",
+            y="y" if xy_plane else "z",
+            z="z" if xy_plane else "y",
+            **{
+                "arrowsize": arrow_size,
+                "arrowstyle": arrowstyle,
+                "linewidth": arrowwidth,
+                "color": arrow_color,
+            },
+        )
+
+    if len(contours) > 0:
+        im_ = ax.images[0]  # Get the image object
+        data_ = im_.get_array().data  # Extract the array data from the image object
+        # Get the extent of the original image to match the coordinates
+        extent = im_.get_extent()
+        # Plot contours using the same data
+        cs = ax.contour(data_, extent=extent, origin="lower", levels=contours, cmap=contour_cmap)
+        ax.clabel(cs, inline=1, fontsize=15)
+
+    if plot_planet is not None:
+        for i in range(len(plot_planet)):
+            plt.scatter(
+                [plot_planet[i][0]], [plot_planet[i][1]], s=5 * s, c=planet_color, zorder=5
+            )
+
+    if plot_star is not None:
+        plt.scatter(
+            [plot_star[0]], [plot_star[1]], s=5 * s, c=star_color, zorder=5, marker=star_marker
+        )
+
+    plt.xlabel("x [au]", fontsize=label_size * font_scale_)
+    plt.ylabel("y [au]" if xy_plane else "z [au]", fontsize=label_size * font_scale_)
+
+    # save = True
+    # save = False
+    plt.tight_layout()
+    if save:
+        plt.savefig(f"{savename}.pdf")
+        print(f"Saved to {savename}.pdf")
+
+    plt.show()
+
+    if return_img:
+        return img_data, img_axes
+    return None
